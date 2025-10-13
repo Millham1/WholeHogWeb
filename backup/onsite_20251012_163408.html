@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>On-Site Judging</title>
+  <style>
+    :root {
+      --bg: #0f1115; --card:#171924; --text:#e8eaf1; --muted:#a6adbb; --accent:#2fb67e; --line:#232631;
+      --btn:#202434; --btn-hover:#2a2f44; --btn-text:#e8eaf1;
+    }
+    html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+    header { display:flex; align-items:center; gap:16px; padding:14px 18px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, #121420, #0f1115); }
+    header img { height:52px; object-fit:contain; }
+    header h1 { font-size:1.35rem; margin:0; font-weight:650; letter-spacing:.2px; }
+    .page { max-width:1100px; margin:0 auto; padding:20px 16px 48px; }
+    /* SINGLE source of truth for the top go buttons */
+    #top-go-buttons { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0 22px; }
+    .go-btn {
+      display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px;
+      background:var(--btn); color:var(--btn-text); text-decoration:none; border:1px solid var(--line);
+      transition:transform .06s ease, background .15s ease;
+    }
+    .go-btn:hover { background:var(--btn-hover); transform:translateY(-1px); }
+    .card {
+      background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;
+      box-shadow:0 10px 24px rgba(0,0,0,.25);
+    }
+    .card h2 { margin:0 0 10px; font-size:1.1rem; }
+    .grid { display:grid; gap:14px; grid-template-columns:1fr; }
+    @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+    label { display:block; font-size:.92rem; color:var(--muted); margin:8px 0 6px; }
+    input, select, textarea {
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:#0f121a; color:var(--text);
+    }
+    .row { display:flex; gap:10px; }
+    .row > * { flex:1; }
+    .pill { display:inline-block; padding:6px 10px; border-radius:999px; font-size:.82rem; background:#0f121a; border:1px solid var(--line); color:var(--muted); }
+    .submit {
+      margin-top:14px; padding:11px 16px; border-radius:10px; border:1px solid var(--line); background:var(--accent); color:#07130e;
+      font-weight:700; cursor:pointer;
+    }
+    footer { margin-top:28px; color:var(--muted); font-size:.86rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <!-- Safe: if images are missing, layout still holds -->
+    <img src="./Legion%20whole%20hog%20logo.png" alt="Legion Whole Hog Logo" onerror="this.style.display='none'">
+    <img src="./AL%20Medallion.png" alt="AL Medallion" onerror="this.style.display='none'">
+    <h1>On-Site Judging</h1>
+  </header>
+
+  <main class="page">
+    <!-- EXACTLY ONE SET of navigation buttons -->
+    <nav id="top-go-buttons" aria-label="Primary">
+      <a class="go-btn" id="go-home" data-label="Home" href="./index.html">🏠 Home</a>
+      <a class="go-btn" id="go-landing" data-label="Go to Landing" href="./landing.html">↩️ Go to Landing</a>
+      <a class="go-btn" id="go-leaderboard" data-label="Go to Leaderboard" href="./leaderboard.html">🏆 Go to Leaderboard</a>
+      <a class="go-btn" id="go-blind" data-label="Go to Blind Taste" href="./blind.html">👁️ Go to Blind Taste</a>
+    </nav>
+
+    <!-- Content -->
+    <div class="grid">
+      <!-- Left: Scoring Card (single, canonical) -->
+      <section class="card" id="scoring-card" aria-labelledby="scoring-card-title">
+        <h2 id="scoring-card-title">On-Site Scoring Card</h2>
+        <span class="pill" id="event-pill">Event: <strong>Whole Hog</strong></span>
+
+        <div class="row">
+          <div>
+            <label for="team">Team</label>
+            <select id="team" name="team">
+              <option value="" selected disabled>Select team…</option>
+            </select>
+          </div>
+          <div>
+            <label for="chip">Chip #</label>
+            <input id="chip" name="chip" type="text" inputmode="numeric" placeholder="e.g., 104" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="judge">Judge</label>
+            <select id="judge" name="judge">
+              <option value="" selected disabled>Select judge…</option>
+            </select>
+          </div>
+          <div>
+            <label for="table">Table</label>
+            <input id="table" name="table" type="text" placeholder="e.g., A" />
+          </div>
+        </div>
+
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="4" placeholder="Optional notes…"></textarea>
+
+        <button class="submit" id="submit-score" type="button">Submit Score</button>
+
+        <footer>All fields auto-save locally until submission.</footer>
+      </section>
+
+      <!-- Right: Live Info / Helper -->
+      <aside class="card" id="helper-pane" aria-labelledby="helper-title">
+        <h2 id="helper-title">Team Snapshot</h2>
+        <div id="team-snapshot">
+          <p class="pill">No team selected</p>
+        </div>
+        <h2 style="margin-top:16px">Guidelines</h2>
+        <ul>
+          <li>Verify team and chip # before scoring.</li>
+          <li>Confirm judge name matches roster.</li>
+          <li>Use notes for any anomalies.</li>
+        </ul>
+      </aside>
+    </div>
+
+    <!-- Optional bottom area (INTENTIONALLY no extra go-buttons here) -->
+    <section class="card" style="margin-top:16px">
+      <h2>Recent Submissions</h2>
+      <div id="recent-submissions">No submissions yet.</div>
+    </section>
+
+    <footer style="text-align:center; margin-top:24px; color:var(--muted);">
+      © <span id="year"></span> Whole Hog Scoring
+    </footer>
+  </main>
+
+  <script>
+    // Minimal JS: populate year, guard against accidental duplication
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Hard guard: if any script tries to add duplicate nav blocks, remove extras.
+    (function enforceSingleTopButtons(){
+      const nodes = Array.from(document.querySelectorAll('#top-go-buttons'));
+      if (nodes.length > 1) {
+        // keep the first, remove the rest
+        nodes.slice(1).forEach(n => n.remove());
+      }
+      // also ensure unique buttons by id in the kept block
+      const btnIds = new Set();
+      document.querySelectorAll('#top-go-buttons .go-btn').forEach(btn=>{
+        if (btnIds.has(btn.id)) btn.remove(); else btnIds.add(btn.id);
+      });
+    })();
+
+    // Example: placeholder data loaders. Wire these to your actual data sources.
+    (function seedDropdowns(){
+      const teams = []; // fill from your Teams table/API
+      const judges = []; // fill from your Judges table/API
+
+      const teamSel = document.getElementById('team');
+      const judgeSel = document.getElementById('judge');
+
+      for (const t of teams) {
+        const opt = document.createElement('option');
+        opt.value = t.id ?? t.name;
+        opt.textContent = t.name ?? String(t);
+        teamSel.appendChild(opt);
+      }
+      for (const j of judges) {
+        const opt = document.createElement('option');
+        opt.value = j.id ?? j.name;
+        opt.textContent = j.name ?? String(j);
+        judgeSel.appendChild(opt);
+      }
+    })();
+  </script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,437 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog Competition 2025</title>
+  <style>
+    :root{
+      --bg:#f7f9ff; --card:#fff; --ink:#111; --muted:#555;
+      --blue:#083d8c; --white:#ffffff; --red:#b10020;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,system-ui;
+      color:var(--ink);
+      background:linear-gradient(180deg,#ffffff, #f1f4ff 35%, #eef2ff 100%);
+      padding:16px;
+    }
+    .site-header{
+      position:relative;
+      display:flex; align-items:center; justify-content:space-between;
+      height:140px; padding:0 16px;
+      border-radius:16px;
+      background:linear-gradient(90deg,var(--blue),var(--white) 50%,var(--red));
+      box-shadow:0 6px 18px rgba(0,0,0,.12);
+    }
+    .logo-pig{ width:288px; height:auto; object-fit:contain; }
+    .logo-medal{ width:144px; height:auto; object-fit:contain; }
+    .site-header h1{
+      position:absolute; left:50%; transform:translateX(-50%);
+      margin:0; text-align:center;
+      font-weight:800; font-size:38px; letter-spacing:.2px; color:#000;
+      text-shadow:0 1px 0 rgba(255,255,255,.45);
+    }
+    .page{
+      max-width:1200px; margin:20px auto; display:grid; gap:16px;
+    }
+    .toolbar{
+      display:flex; gap:12px; justify-content:flex-end;
+    }
+    .btn{
+      padding:10px 14px; border-radius:10px; border:1px solid #d9dbe7; background:#fff; cursor:pointer;
+    }
+    .btn.primary{ background:var(--blue); color:#fff; border-color:transparent; }
+    .card{
+      background:var(--card); border-radius:var(--radius);
+      box-shadow:0 8px 18px rgba(0,0,0,.08);
+      padding:16px;
+    }
+    .card h2{ margin:0 0 12px 0; font-size:20px }
+    .grid-two{
+      display:grid; grid-template-columns: 420px 1fr; gap:16px;
+    }
+    .fieldset{ display:grid; gap:10px; }
+    label strong{ display:block; margin-bottom:4px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px }
+    input[type="text"]{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #d9dbe7; background:#fff;
+    }
+    .mini-list{
+      display:grid; gap:8px; align-content:start; max-height:280px; overflow:auto; padding-right:4px;
+    }
+    .pill{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; padding:10px 12px; border:1px solid #e4e6f0; border-radius:12px; background:#fff;
+    }
+    .pill small{ color:var(--muted) }
+    .pill .kill{ border:none; background:#f6f6fb; border-radius:8px; padding:6px 10px; cursor:pointer }
+    .footer-note{ color:var(--muted); font-size:12px; }
+  </style>
+  <script type="module" src="wh-common.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <img class="logo-pig"   src="pig-rwb-1024.png" alt="Pig">
+    <h1>Whole Hog Competition 2025</h1>
+    <img class="logo-medal" src="AL Medallion.png" alt="American Legion">
+  </header>
+
+  <main class="page">
+    <div class="toolbar">
+      <a class="btn primary" href="index.html">Go to On-Site Scoring</a>
+      <a class="btn" href="blind.html">Go to Blind Tasting</a>
+    </div>
+
+    <!-- Teams -->
+    <section class="card">
+      <h2>Teams</h2>
+      <div class="grid-two">
+        <div class="fieldset">
+          <label><strong>Team name</strong><input id="teamName" type="text" placeholder="Team name"></label>
+          <label><strong>Site #</strong><input id="teamSite" type="text" placeholder="e.g., 14"></label>
+          <button class="btn primary" id="addTeam">Add Team</button>
+          <div class="footer-note">Duplicates (by name or site) are ignored.</div>
+        </div>
+        <div>
+          <div class="mini-list" id="teamList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Judges -->
+    <section class="card">
+      <h2>Judges</h2>
+      <div class="grid-two">
+        <div class="fieldset">
+          <label><strong>Judge name</strong><input id="judgeName" type="text" placeholder="Judge name"></label>
+          <button class="btn primary" id="addJudge">Add Judge</button>
+        </div>
+        <div>
+          <div class="mini-list" id="judgeList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="landing.js"></script>
+<!-- WHOLEHOG SUPABASE START -->
+<script src="supabase-rest.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.whAutoWire) { try { window.whAutoWire(); } catch (e) { console.error(e); } }
+  });
+</script>
+<!-- WHOLEHOG SUPABASE END -->
+<script type="module">
+/* WHOLEHOG LANDING WIRE (idempotent) */
+import { fetchTeams, fetchJudges, insertTeam, insertJudge, state } from \"./wh-common.js\";
+
+async function refreshLists(){
+  // Teams list
+  const teamList = document.querySelector(\"#teamList\");
+  if (teamList){
+    const teams = await fetchTeams();
+    teamList.innerHTML = \"\";
+    for (const t of teams){
+      const li = document.createElement(\"li\");
+      li.textContent = `${t.site_number} â€” ${t.name}`;
+      li.style.cursor = \"pointer\";
+      li.onclick = () => { state.lastTeam = t.id; highlight(teamList, li); };
+      teamList.appendChild(li);
+      if (t.id === state.lastTeam) setTimeout(()=>highlight(teamList, li), 0);
+    }
+  }
+  // Judges list
+  const judgeList = document.querySelector(\"#judgeList\");
+  if (judgeList){
+    const judges = await fetchJudges();
+    judgeList.innerHTML = \"\";
+    for (const j of judges){
+      const li = document.createElement(\"li\");
+      li.textContent = j.name;
+      li.style.cursor = \"pointer\";
+      li.onclick = () => { state.lastJudge = j.id; highlight(judgeList, li); };
+      judgeList.appendChild(li);
+      if (j.id === state.lastJudge) setTimeout(()=>highlight(judgeList, li), 0);
+    }
+  }
+}
+function highlight(ul, li){
+  Array.from(ul.children).forEach(e=>e.classList.remove(\"selected\"));
+  li.classList.add(\"selected\");
+}
+
+async function wireLanding(){
+  // add a tiny style for selection if not present
+  if (!document.querySelector(\"#wh-landing-style\")){
+    const s = document.createElement(\"style\");
+    s.id = \"wh-landing-style\";
+    s.textContent = \"ul li.selected{background:#eef;border-radius:6px;padding:2px 6px}\";
+    document.head.appendChild(s);
+  }
+
+  // Team form
+  const tn = document.querySelector(\"#teamName\");
+  const ts = document.querySelector(\"#siteNumber\");
+  const btnTeam = document.querySelector(\"#btnSaveTeam\");
+  if (tn && ts && btnTeam){
+    btnTeam.addEventListener(\"click\", async (e)=>{
+      e.preventDefault();
+      const name = (tn.value||\"\").trim();
+      const site = (ts.value||\"\").trim();
+      if(!name || !site){ alert(\"Enter Team name and Site #\"); return; }
+      try {
+        const rec = await insertTeam(name, site);
+        if (rec && rec.id){ state.lastTeam = rec.id; }
+        tn.value = \"\"; ts.value = \"\";
+        await refreshLists();
+      } catch(ex){ alert(\"Save team failed: \" + (ex?.message || ex)); }
+    });
+  }
+
+  // Judge form
+  const jn = document.querySelector(\"#judgeName\");
+  const btnJudge = document.querySelector(\"#btnSaveJudge\");
+  if (jn && btnJudge){
+    btnJudge.addEventListener(\"click\", async (e)=>{
+      e.preventDefault();
+      const name = (jn.value||\"\").trim();
+      if(!name){ alert(\"Enter Judge name\"); return; }
+      try {
+        const rec = await insertJudge(name);
+        if (rec && rec.id){ state.lastJudge = rec.id; }
+        jn.value = \"\";
+        await refreshLists();
+      } catch(ex){ alert(\"Save judge failed: \" + (ex?.message || ex)); }
+    });
+  }
+
+  await refreshLists();
+}
+
+document.addEventListener(\"DOMContentLoaded\", wireLanding);
+</script>
+
+<!-- WHOLEHOG-SUPABASE-START -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // WHOLEHOG Supabase bootstrap
+  (function () {
+    var url = "https://wiolulxxfyetvdpnfusq.supabase.co";
+    var key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpb2x1bHh4ZnlldHZkcG5mdXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg4NjYsImV4cCI6MjA3NDMxNDg2Nn0.zrZI3_Ex3mfqkjKuWB9k-Gec77P7aqf6OJxKvGyxyTc";
+    if (!window.supabase) {
+      window.supabase = window.supabase || supabase.createClient(url, key);
+    }
+  })();
+</script>
+<!-- WHOLEHOG-SUPABASE-END -->
+
+<!-- WHOLEHOG-LANDING-WIRE-START -->
+<script>
+(function () {
+  if (!window.supabase) return; // Supabase not loaded
+  var sb = window.supabase;
+
+  function $(id){ return document.getElementById(id); }
+  function safeVal(el){ return el ? (el.value||"").trim() : ""; }
+  function renderList(host, rows, line){
+    if(!host) return;
+    host.innerHTML = (rows||[]).map(line).join("");
+  }
+
+  // TEAMS
+  async function refreshTeams(){
+    var res = await sb.from("teams").select("id,name,site_number").order("site_number",{ascending:true});
+    if(res.error){ console.warn(res.error); return; }
+    renderList($("#teamsList"), res.data, function(r){
+      return '<div class="row"><b>'+ (r.site_number||"") +'</b> â€” '+ (r.name||"") +'</div>';
+    });
+  }
+  async function addTeam(){
+    var name = safeVal($("#teamName"));
+    var site = safeVal($("#siteNumber"));
+    if(!name || !site){ alert("Enter Team name and Site #"); return; }
+    var ins = await sb.from("teams").insert({ name: name, site_number: site });
+    if(ins.error){ alert(ins.error.message); return; }
+    if($("#teamName")) $("#teamName").value = "";
+    if($("#siteNumber")) $("#siteNumber").value = "";
+    refreshTeams();
+  }
+
+  // JUDGES
+  async function refreshJudges(){
+    var res = await sb.from("judges").select("id,name,active").order("name");
+    if(res.error){ console.warn(res.error); return; }
+    renderList($("#judgesList"), res.data, function(r){
+      return '<div class="row">'+ (r.name||"") + (r.active ? "" : " (inactive)") +'</div>';
+    });
+  }
+  async function addJudge(){
+    var name = safeVal($("#judgeName"));
+    if(!name){ alert("Enter Judge name"); return; }
+    var ins = await sb.from("judges").insert({ name: name, active: true });
+    if(ins.error){ alert(ins.error.message); return; }
+    if($("#judgeName")) $("#judgeName").value = "";
+    refreshJudges();
+  }
+
+  // Hook up buttons if present
+  if($("#addTeamBtn"))  $("#addTeamBtn").addEventListener("click", addTeam);
+  if($("#addJudgeBtn")) $("#addJudgeBtn").addEventListener("click", addJudge);
+  if($("#goOnsiteBtn")) $("#goOnsiteBtn").addEventListener("click", function(){ location.href = "index.html"; });
+
+  // Initial load
+  refreshTeams();
+  refreshJudges();
+})();
+</script>
+<!-- WHOLEHOG-LANDING-WIRE-END -->
+
+<!-- WHOLEHOG--START -->
+<script>
+(function () {
+  try {
+    function setHint(id, key){ if(id){ localStorage.setItem(key, id); } }
+
+    // Hook your existing "Go to On-Site" button
+    var go = document.getElementById("goOnsiteBtn");
+    if(go && !go.dataset.whook){
+      go.dataset.whook = "1";
+      go.addEventListener("click", function(){
+        var t = localStorage.getItem("wh_selected_team_id") || "";
+        var j = localStorage.getItem("wh_selected_judge_id") || "";
+        var qs = [];
+        if(t) qs.push("teamId="+encodeURIComponent(t));
+        if(j) qs.push("judgeId="+encodeURIComponent(j));
+        location.href = "index.html" + (qs.length ? ("?"+qs.join("&")) : "");
+      });
+    }
+
+    // If your Supabase inserts call .select().single(), set IDs afterward:
+    // Example hooks (optional, safe if not found):
+    document.addEventListener("wh:setTeamId", function(e){ setHint(e.detail, "wh_selected_team_id"); });
+    document.addEventListener("wh:setJudgeId", function(e){ setHint(e.detail, "wh_selected_judge_id"); });
+  } catch(e){ console.warn(e); }
+})();
+</script>
+<!-- WHOLEHOG--END -->
+
+  <!-- WholeHog Supabase wiring -->
+<script src="wh/supabase-config.js"></script>
+<script src="wh/landing-wire.js"></script>
+
+<!-- WHOLEHOG INIT START -->
+<script>
+/* WHOLEHOG INIT (shared) */
+(function(){
+  if (!window.WHOLEHOG) window.WHOLEHOG = {};
+  if (!window.WHOLEHOG.sb) {
+    try {
+      window.WHOLEHOG.sb = window.supabase.createClient(
+        "' + $ProjectUrl + '",
+        "' + $AnonKey + '"
+      );
+      console.log("[WHOLEHOG] Supabase client ready.");
+    } catch (e) {
+      console.error("[WHOLEHOG] Supabase init failed:", e);
+    }
+  }
+})();
+</script>
+<!-- WHOLEHOG INIT END -->
+
+<!-- WHOLEHOG LANDING START -->
+<script>
+/* WHOLEHOG LANDING */
+(function(){
+  var SB = (window.WHOLEHOG && window.WHOLEHOG.sb) ? window.WHOLEHOG.sb : null;
+  if (!SB) { console.error("[WHOLEHOG] Supabase not initialized on landing."); return; }
+
+  function pick(ids){
+    for (var i=0;i<ids.length;i++){ var el = document.getElementById(ids[i]); if(el) return el; }
+    return null;
+  }
+
+  // Candidates for existing element IDs (we don't change your HTML)
+  var elTeamName  = pick(["teamName","team-name","team_name","teamInput","teamNameInput"]);
+  var elSite      = pick(["site","site-number","site_number","siteInput","siteNo"]);
+  var elAddTeam   = pick(["btnAddTeam","addTeam","saveTeam","team-save","btn-team-add"]);
+  var elTeamList  = pick(["teamList","teams-list","teams","teamsList","teamsView"]);
+
+  var elJudgeName = pick(["judgeName","judge-name","judge_name","inputJudge","judgeNameInput"]);
+  var elAddJudge  = pick(["btnAddJudge","addJudge","saveJudge","judge-save","btn-judge-add"]);
+  var elJudgeList = pick(["judgeList","judges-list","judges","judgesList","judgesView"]);
+
+  var elGoOnsite  = pick(["btnGoOnsite","goOnsite","gotoOnsite","toOnsite","go-onsite"]);
+
+  function renderList(container, rows, kind){
+    if(!container) return;
+    var h = [];
+    if(kind === "team"){
+      for (var i=0;i<rows.length;i++){
+        var t = rows[i];
+        h.push('<div style="display:flex;justify-content:space-between;padding:4px 6px;border-bottom:1px solid #eee;">' +
+               '<span>' + escapeHtml(t.name) + '</span>' +
+               '<span style="opacity:.7">Site ' + escapeHtml(t.site_number||"") + '</span>' +
+               '</div>');
+      }
+    } else {
+      for (var j=0;j<rows.length;j++){
+        var g = rows[j];
+        h.push('<div style="padding:4px 6px;border-bottom:1px solid #eee;">' + escapeHtml(g.name) + '</div>');
+      }
+    }
+    container.innerHTML = h.join("");
+  }
+
+  function escapeHtml(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]);}); }
+
+  async function loadTeams(){
+    var { data, error } = await SB.from('teams').select('id,name,site_number').order('site_number',{ascending:true});
+    if(error) { console.error("[WHOLEHOG] loadTeams", error); return; }
+    renderList(elTeamList, data||[], "team");
+  }
+
+  async function loadJudges(){
+    var { data, error } = await SB.from('judges').select('id,name').order('name',{ascending:true});
+    if(error) { console.error("[WHOLEHOG] loadJudges", error); return; }
+    renderList(elJudgeList, data||[], "judge");
+  }
+
+  async function addTeam(){
+    var name = elTeamName ? elTeamName.value.trim() : "";
+    var site = elSite ? elSite.value.trim() : "";
+    if(!name || !site){ alert("Enter Team Name and Site #"); return; }
+    var { error } = await SB.from('teams').insert([{ name:name, site_number:site }]);
+    if(error){ alert("Add team failed: " + error.message); return; }
+    if(elTeamName) elTeamName.value = "";
+    if(elSite) elSite.value = "";
+    await loadTeams();
+  }
+
+  async function addJudge(){
+    var name = elJudgeName ? elJudgeName.value.trim() : "";
+    if(!name){ alert("Enter Judge Name"); return; }
+    var { error } = await SB.from('judges').insert([{ name:name }]);
+    if(error){ alert("Add judge failed: " + error.message); return; }
+    if(elJudgeName) elJudgeName.value = "";
+    await loadJudges();
+  }
+
+  if(elAddTeam)  elAddTeam.addEventListener('click', addTeam);
+  if(elAddJudge) elAddJudge.addEventListener('click', addJudge);
+  if(elGoOnsite) elGoOnsite.addEventListener('click', function(){ window.location.href = 'onsite.html'; });
+
+  loadTeams(); loadJudges();
+  // Also refresh when tab regains focus
+  window.addEventListener('focus', function(){ loadTeams(); loadJudges(); });
+})();
+</script>
+<!-- WHOLEHOG LANDING END -->  <script src="supabase-config.js"></script>
+  <script src="landing-sb.js"></script>
+</body>
+</html>
+
+

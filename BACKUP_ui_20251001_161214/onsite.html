@@ -1,0 +1,82 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog On-Site Scoring</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="header" style="height:2.25in; line-height:2.25in;">
+    <img id="logoLeft" src="Legion whole hog logo.png" alt="Whole Hog" />
+    <h1 class="title">Whole Hog On-Site Scoring</h1>
+    <img class="right-img" src="AL Medallion.png" alt="American Legion"/>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>Teams & Judges</h2>
+      <div class="flex">
+        <label>Team
+          <select id="teamSel" class="input"></select>
+        </label>
+        <label>Judge
+          <select id="judgeSel" class="input"></select>
+        </label>
+      </div>
+      <div class="muted" style="margin-top:6px;">Pick an existing Team and current Judge.</div>
+    </div>
+
+    <div class="card">
+      <div class="scoring-wrap">
+        <div class="scoring-top">
+          <span class="badge">All numeric picks open horizontally; choose a value then it collapses.</span>
+          <div class="suitable">
+            <span>Suitable for public consumption</span>
+            <select id="suitableSel">
+              <option value="">Select...</option>
+              <option value="YES">YES</option>
+              <option value="NO">NO</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="miniGrid" class="grid-3" style="margin-top:4px;">
+          <!-- mini cards inserted by JS -->
+        </div>
+
+        <fieldset class="compl" style="margin-top:6px;">
+          <legend>Completeness (8 pts each)</legend>
+          <div class="grid">
+            <label><input type="checkbox" id="cln"> Site &amp; cooker cleanliness <span class="pts">+8</span></label>
+            <label><input type="checkbox" id="knv"> Four sharp knives <span class="pts">+8</span></label>
+            <label><input type="checkbox" id="sau"> Four sauce bowls/cups <span class="pts">+8</span></label>
+            <label><input type="checkbox" id="drk"> Four drinks &amp; towels <span class="pts">+8</span></label>
+            <label><input type="checkbox" id="thr"> Two functioning meat thermometers <span class="pts">+8</span></label>
+          </div>
+        </fieldset>
+
+        <div class="totalbar">
+          <span>Total:</span>
+          <span id="totalVal" class="total">0</span>
+        </div>
+
+        <div style="display:flex; justify-content:center; margin-top:6px;">
+          <button id="saveBtn" class="btn">Save Entry</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card leader">
+      <h2>Leaderboard</h2>
+      <div id="leaderWrap"></div>
+    </div>
+
+    <div class="card">
+      <button id="exportBtn" class="btn secondary">Export CSV</button>
+    </div>
+  </div>
+
+  <script src="onsite.js"></script>
+</body>
+</html>

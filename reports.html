@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Reports</title>
+
+<!-- Inline styles to match the existing site look -->
+<style>
+  :root{ --wh-header-h: 2.25in; }
+  header{ min-height:var(--wh-header-h); height:var(--wh-header-h); position:relative; display:flex; align-items:center; justify-content:center; }
+  header img#logoLeft{ position:absolute; left:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
+  header img.right-img{ position:absolute; right:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
+  header h1{ margin:0; text-align:center; }
+  .page-title{ font-weight:700; font-size:1.25rem; margin-left:8px; }
+
+  /* Go-to buttons row (match other pages: red background, bold black text) */
+  #top-go-buttons{
+    width:100%; margin:12px auto;
+    display:flex; justify-content:center; align-items:center;
+    gap:12px; flex-wrap:wrap; text-align:center;
+  }
+  #top-go-buttons a{
+    background:#e53935; color:#000; font-weight:800;
+    border:2px solid #000; border-radius:10px; padding:10px 14px;
+    text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+  }
+  #top-go-buttons a:hover{ filter:brightness(0.9); }
+
+  main{ max-width:1100px; margin:0 auto; padding:16px; }
+  .cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+  .card{
+    border:2px solid #000; border-radius:12px; padding:14px 16px;
+    background:#fff;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.75);
+  }
+  .card h2{ margin:0 0 10px 0; }
+  .actions{ display:flex; flex-direction:column; gap:10px; }
+  .btn{
+    background:#e53935; color:#000; font-weight:800; border:2px solid #000;
+    border-radius:10px; padding:10px 14px; cursor:pointer; text-align:center;
+  }
+  .btn:hover{ filter:brightness(0.9); }
+  .meta{ font-size:0.9rem; opacity:0.8; }
+  .muted{ opacity:0.7; }
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  .note{ font-size:0.9rem; }
+  .small{ font-size:0.85rem; }
+  .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+</style>
+</head>
+<body>
+  <header class="header">
+    <img id="logoLeft" src="Legion whole hog logo.png" alt="Logo" />
+    <h1>Reports</h1>
+    <img class="right-img" src="AL Medallion.png" alt="Logo" />
+    <div class="page-title">Reports</div>
+  </header>
+
+  <nav id="top-go-buttons" aria-label="Primary">
+    <a href="landing.html">Go to Landing</a>
+    <a href="onsite.html">Go to On-site</a>
+    <a href="blind.html">Go to Blind Taste</a>
+    <a href="sauce.html">Go to Sauce Tasting</a>
+    <a href="leaderboard.html">Go to Leaderboard</a>
+  </nav>
+
+  <main>
+    <div class="cards">
+      <section class="card">
+        <h2>CSV Export</h2>
+        <p class="note">Generate a CSV grouped <em>by Team, then Judge</em> with all five on-site categories, Blind, Sauce, judge totals, and a team total.</p>
+        <div class="actions">
+          <button class="btn" id="btnCsv">Build CSV (Grouped by Team &amp; Judge)</button>
+        </div>
+        <p class="small muted">Source: localStorage keys — <span class="mono">onsiteScores, blindScores, sauceScores, judges, teams, landingTeamDivisions, teamEmails</span></p>
+      </section>
+
+      <section class="card">
+        <h2>Full Report (Word)</h2>
+        <p class="note">Creates a Word-compatible <strong>.doc</strong> file: per-team sections, each judge’s line with on-site category scores, Blind, Sauce, Judge Total; plus a Team Total line.</p>
+        <div class="actions">
+          <button class="btn" id="btnDocFull">Build Full Report (.doc)</button>
+        </div>
+        <p class="small muted">Format: self-contained HTML as <span class="mono">application/msword</span> — opens in Word.</p>
+      </section>
+
+      <section class="card">
+        <h2>One-Page Summary (Word)</h2>
+        <p class="note">Generates a one-page <strong>.doc</strong> with: Top 3 teams in <strong>On-site</strong>, <strong>Blind Tasting</strong>, <strong>Sauce Tasting</strong>; and the highest scoring <strong>Legion</strong> and <strong>Sons</strong> teams (from Division Leaders).</p>
+        <div class="actions">
+          <button class="btn" id="btnDocOnePage">Build One-Page Summary (.doc)</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- Helpers for storage & math (no averaging, integer sums only) ----
+  const getArr = k => { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):[]; }catch{ return []; } };
+  const getMap = k => { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):{}; }catch{ return {}; } };
+  const norm   = s => (s==null ? '' : String(s)).trim();
+  const toInt  = v => { const n=Number(v); return Number.isFinite(n) ? Math.trunc(n) : 0; };
+  const csvField = x => { const s=(x==null?'':String(x)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const pad2 = n => String(n).padStart(2,'0');
+
+  // On-site category alias map (robust to label variants)
+  const CAT = {
+    meatSauce:['meatSauce','meat_sauce','meat and sauce','meat&sauce','taste','flavor'],
+    skin:['skin','crackling'],
+    moisture:['moisture','juiciness'],
+    appearance:['appearance','visual','presentation'],
+    tenderness:['tenderness','texture']
+  };
+  const pickInt = (scores, names) => {
+    if (!scores || typeof scores!=='object') return 0;
+    for (const want of names) {
+      if (scores[want] != null) return toInt(scores[want]);
+      const tgt = want.toLowerCase().replace(/[ _&]/g,'');
+      for (const k in scores) {
+        const kk = k.toLowerCase().replace(/[ _&]/g,'');
+        if (kk === tgt) return toInt(scores[k]);
+      }
+    }
+    return 0;
+  };
+
+  // ---- Aggregate data from localStorage ----
+  function loadData(){
+    const onsite = getArr('onsiteScores');
+    const blind  = getArr('blindScores');
+    const sauce  = getArr('sauceScores');
+    const teamsA = getArr('teams');
+    const judgesA= getArr('judges');
+    const divMap = getMap('landingTeamDivisions') || {};
+    const emailM = getMap('teamEmails') || {};
+
+    // Team list union
+    const teamSet = new Set();
+    teamsA.forEach(t=>{ const n=norm(t?.team||t?.name); if(n) teamSet.add(n); });
+    Object.keys(divMap).forEach(n=>{ n=norm(n); if(n) teamSet.add(n); });
+    Object.keys(emailM).forEach(n=>{ n=norm(n); if(n) teamSet.add(n); });
+    onsite.forEach(r=>{ const n=norm(r?.team||r?.teamName||r?.name); if(n) teamSet.add(n); });
+    blind .forEach(r=>{ const n=norm(r?.team); if(n) teamSet.add(n); });
+    sauce .forEach(r=>{ const n=norm(r?.team); if(n) teamSet.add(n); });
+    const teams = Array.from(teamSet).sort((a,b)=>a.localeCompare(b));
+
+    // Judges list
+    let judges = (judgesA||[]).map(j=>norm(j?.name)).filter(Boolean);
+    if (!judges.length) {
+      const s=new Set();
+      onsite.forEach(r=>{ if (r?.judge) s.add(norm(r.judge)); });
+      blind .forEach(r=>{ if (r?.judge) s.add(norm(r.judge)); });
+      sauce .forEach(r=>{ if (r?.judge) s.add(norm(r.judge)); });
+      judges = Array.from(s);
+    }
+    judges.sort((a,b)=>a.localeCompare(b));
+
+    // Per team/judge aggregates (no averaging)
+    const onsiteTJ = {}, blindTJ = {}, sauceTJ = {}, teamTotals = { onsite:{}, blind:{}, sauce:{}, all:{} };
+
+    const ensureO  = (t,j)=>{ (onsiteTJ[t] ||= {}); (onsiteTJ[t][j] ||= {ms:0,sk:0,mo:0,ap:0,te:0,total:0}); };
+    const ensureTJ = (obj,t,j)=>{ (obj[t] ||= {}); (obj[t][j] ||= 0); };
+
+    onsite.forEach(r=>{
+      const t = norm(r?.team||r?.teamName||r?.name);
+      const j = norm(r?.judge);
+      if (!t || !j) return;
+      const sc=r?.scores||{};
+      const ms=pickInt(sc,CAT.meatSauce), sk=pickInt(sc,CAT.skin), mo=pickInt(sc,CAT.moisture),
+            ap=pickInt(sc,CAT.appearance), te=pickInt(sc,CAT.tenderness);
+      const add = ms+sk+mo+ap+te;
+      ensureO(t,j);
+      onsiteTJ[t][j].ms+=ms; onsiteTJ[t][j].sk+=sk; onsiteTJ[t][j].mo+=mo; onsiteTJ[t][j].ap+=ap; onsiteTJ[t][j].te+=te; onsiteTJ[t][j].total+=add;
+      teamTotals.onsite[t]=(teamTotals.onsite[t]||0)+add;
+      teamTotals.all[t]=(teamTotals.all[t]||0)+add;
+    });
+    blind.forEach(r=>{
+      const t=norm(r?.team), j=norm(r?.judge); if(!t||!j) return;
+      ensureTJ(blindTJ,t,j);
+      const s = toInt(r?.score);
+      blindTJ[t][j]+=s;
+      teamTotals.blind[t]=(teamTotals.blind[t]||0)+s;
+      teamTotals.all[t]=(teamTotals.all[t]||0)+s;
+    });
+    sauce.forEach(r=>{
+      const t=norm(r?.team), j=norm(r?.judge); if(!t||!j) return;
+      ensureTJ(sauceTJ,t,j);
+      const s = toInt(r?.score);
+      sauceTJ[t][j]+=s;
+      teamTotals.sauce[t]=(teamTotals.sauce[t]||0)+s;
+      teamTotals.all[t]=(teamTotals.all[t]||0)+s;
+    });
+
+    return { onsite, blind, sauce, teams, judges, onsiteTJ, blindTJ, sauceTJ, teamTotals, divMap, emailM };
+  }
+
+  // ---- CSV (grouped by team then judge) ----
+  function buildGroupedCSV(){
+    const D = loadData();
+    const rows = [];
+
+    for (const team of D.teams) {
+      const division = D.divMap[team] || '';
+      const email    = D.emailM[team] || '';
+      const ttot     = D.teamTotals.all[team] || 0;
+
+      rows.push([`Team: ${team}`, `Division: ${division}`, `Email: ${email}`]);
+      rows.push(['Judge','Meat & Sauce','Skin','Moisture','Appearance','Tenderness','On-site Total','Blind','Sauce','Judge Total']);
+
+      const jset = new Set();
+      if (D.onsiteTJ[team]) Object.keys(D.onsiteTJ[team]).forEach(j=>jset.add(j));
+      if (D.blindTJ [team]) Object.keys(D.blindTJ [team]).forEach(j=>jset.add(j));
+      if (D.sauceTJ [team]) Object.keys(D.sauceTJ [team]).forEach(j=>jset.add(j));
+      let teamJudges = Array.from(jset);
+      if (!teamJudges.length) teamJudges = D.judges.length ? D.judges.slice(0,1) : [''];
+      teamJudges.sort((a,b)=>a.localeCompare(b));
+
+      for (const j of teamJudges){
+        const o = (D.onsiteTJ[team]?.[j]) || {ms:0,sk:0,mo:0,ap:0,te:0,total:0};
+        const b = (D.blindTJ [team]?.[j]) || 0;
+        const s = (D.sauceTJ [team]?.[j]) || 0;
+        rows.push([ j, o.ms, o.sk, o.mo, o.ap, o.te, o.total, b, s, (o.total+b+s) ]);
+      }
+      rows.push(['Team Total','','','','','','','','', ttot]);
+      rows.push(['']);
+    }
+
+    if (!rows.length) { alert('No data in localStorage to build the CSV.'); return; }
+
+    const csv = rows.map(r => r.map(csvField).join(',')).join('\r\n');
+    const ts = new Date();
+    const name=`wh-report_grouped_${ts.getFullYear()}${pad2(ts.getMonth()+1)}${pad2(ts.getDate())}-${pad2(ts.getHours())}${pad2(ts.getMinutes())}${pad2(ts.getSeconds())}.csv`;
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}), a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},100);
+  }
+
+  // ---- Word-compatible HTML generator ----
+  function downloadDoc(htmlBody, baseName){
+    const header = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:w="urn:schemas-microsoft-com:office:word"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="utf-8"><title>${baseName}</title>
+      <style>
+        body{font-family:Calibri,Arial,sans-serif; font-size:11pt; color:#000}
+        h1,h2,h3{margin:0.2in 0 0.1in 0}
+        table{border-collapse:collapse; width:100%}
+        th,td{border:1px solid #000; padding:4px 6px; vertical-align:top}
+        .small{font-size:10pt}
+        .muted{opacity:0.8}
+      </style>
+      </head><body>`;
+    const footer = `</body></html>`;
+    const content = header + htmlBody + footer;
+    const ts = new Date();
+    const name = `${baseName}_${ts.getFullYear()}${pad2(ts.getMonth()+1)}${pad2(ts.getDate())}-${pad2(ts.getHours())}${pad2(ts.getMinutes())}${pad2(ts.getSeconds())}.doc`;
+    const blob = new Blob([content], {type:'application/msword'});
+    const a = document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},100);
+  }
+
+  // ---- Full DOC report (grouped by team, then judge) ----
+  function buildFullDoc(){
+    const D = loadData();
+    if (!D.teams.length){ alert('No data in localStorage to build the report.'); return; }
+
+    let html = `<h1>Whole Hog Competition – Full Report</h1>
+                <p class="muted small">Generated: ${new Date().toLocaleString()}</p>`;
+
+    for (const team of D.teams){
+      const division = D.divMap[team] || '';
+      const email    = D.emailM[team] || '';
+      const ttot     = D.teamTotals.all[team] || 0;
+
+      html += `<h2>Team: ${team}</h2>
+               <p class="small">Division: <strong>${division||'-'}</strong> &nbsp; | &nbsp; Email: <strong>${email||'-'}</strong></p>
+               <table>
+                 <thead><tr>
+                   <th>Judge</th><th>Meat &amp; Sauce</th><th>Skin</th><th>Moisture</th><th>Appearance</th><th>Tenderness</th>
+                   <th>On-site Total</th><th>Blind</th><th>Sauce</th><th>Judge Total</th>
+                 </tr></thead><tbody>`;
+
+      const jset = new Set();
+      if (D.onsiteTJ[team]) Object.keys(D.onsiteTJ[team]).forEach(j=>jset.add(j));
+      if (D.blindTJ [team]) Object.keys(D.blindTJ [team]).forEach(j=>jset.add(j));
+      if (D.sauceTJ [team]) Object.keys(D.sauceTJ [team]).forEach(j=>jset.add(j));
+      let teamJudges = Array.from(jset);
+      if (!teamJudges.length) teamJudges = D.judges.length ? D.judges.slice(0,1) : [''];
+      teamJudges.sort((a,b)=>a.localeCompare(b));
+
+      for (const j of teamJudges){
+        const o = (D.onsiteTJ[team]?.[j]) || {ms:0,sk:0,mo:0,ap:0,te:0,total:0};
+        const b = (D.blindTJ [team]?.[j]) || 0;
+        const s = (D.sauceTJ [team]?.[j]) || 0;
+        const jt = o.total + b + s;
+        html += `<tr><td>${j||''}</td><td>${o.ms}</td><td>${o.sk}</td><td>${o.mo}</td><td>${o.ap}</td><td>${o.te}</td>
+                    <td>${o.total}</td><td>${b}</td><td>${s}</td><td>${jt}</td></tr>`;
+      }
+      html += `</tbody></table>
+               <p><strong>Team Total:</strong> ${ttot}</p>
+               <hr/>`;
+    }
+
+    downloadDoc(html, 'wh-full-report');
+  }
+
+  // ---- One-page summary DOC: top 3 in On-site, Blind, Sauce + Division leaders ----
+  function buildOnePageDoc(){
+    const D = loadData();
+    if (!D.teams.length){ alert('No data in localStorage to build the report.'); return; }
+
+    // Rank helpers
+    const rank = (objTotals) => {
+      const arr = Object.keys(objTotals).map(t=>({team:t, total: toInt(objTotals[t])}));
+      arr.sort((a,b)=> b.total - a.total || a.team.localeCompare(b.team));
+      return arr;
+    };
+
+    const onsiteTop = rank(D.teamTotals.onsite).slice(0,3);
+    const blindTop  = rank(D.teamTotals.blind ).slice(0,3);
+    const sauceTop  = rank(D.teamTotals.sauce ).slice(0,3);
+
+    // Division leaders from mapping (highest On-site score)
+    function topByDivision(div){
+      const pick = Object.keys(D.divMap)
+        .filter(team => (D.divMap[team]||'').toLowerCase().trim() === div)
+        .map(team => ({ team, total: toInt(D.teamTotals.onsite[team]||0) }))
+        .sort((a,b)=> b.total - a.total || a.team.localeCompare(b.team));
+      return pick[0] || null;
+    }
+    const legion = topByDivision('legion');
+    const sons   = topByDivision('sons');
+
+    let html = `<h1>Whole Hog Competition – One-Page Summary</h1>
+                <p class="muted small">Generated: ${new Date().toLocaleString()}</p>
+                <div class="grid2">
+                  <div>
+                    <h2>Top 3 – On-site</h2>
+                    ${tableFromRanks(onsiteTop)}
+                  </div>
+                  <div>
+                    <h2>Top 3 – Blind Tasting</h2>
+                    ${tableFromRanks(blindTop)}
+                  </div>
+                  <div>
+                    <h2>Top 3 – Sauce Tasting</h2>
+                    ${tableFromRanks(sauceTop)}
+                  </div>
+                  <div>
+                    <h2>Division Leaders</h2>
+                    <table><thead><tr><th>Division</th><th>Team</th><th>On-site Total</th></tr></thead><tbody>
+                      ${leaderRow('Legion', legion)}
+                      ${leaderRow('Sons',   sons)}
+                    </tbody></table>
+                  </div>
+                </div>`;
+
+    function tableFromRanks(list){
+      if (!list.length) return `<p class="muted small">No data.</p>`;
+      let rows = list.map((r,i)=>`<tr><td>${i+1}</td><td>${r.team}</td><td>${r.total}</td></tr>`).join('');
+      return `<table><thead><tr><th>#</th><th>Team</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    function leaderRow(label, item){
+      if (!item) return `<tr><td>${label}</td><td class="muted">—</td><td class="muted">—</td></tr>`;
+      return `<tr><td>${label}</td><td>${item.team}</td><td>${item.total}</td></tr>`;
+    }
+
+    downloadDoc(html, 'wh-one-page-summary');
+  }
+
+  // ---- Wire buttons ----
+  document.getElementById('btnCsv')        ?.addEventListener('click', buildGroupedCSV);
+  document.getElementById('btnDocFull')    ?.addEventListener('click', buildFullDoc);
+  document.getElementById('btnDocOnePage') ?.addEventListener('click', buildOnePageDoc);
+})();
+</script>
+
+</body>
+</html>

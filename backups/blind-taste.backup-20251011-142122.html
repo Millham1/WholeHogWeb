@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog — Blind Taste</title>
+  <link rel="stylesheet" href="styles.css"/>
+
+  <!-- WH HARD HEADER START (match On-Site) -->
+  <style id="wh-hard-header">
+    :root { --wh-header-h: 2.25in; }
+    header, .header, .app-header, .site-header, #header {
+      min-height: var(--wh-header-h) !important;
+      height: var(--wh-header-h) !important;
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    header h1, .header h1, .app-header h1, .site-header h1, #header h1 {
+      margin: 0 !important;
+      line-height: 1.1 !important;
+    }
+    header img#logoLeft,
+    header .left-img,
+    header .brand-left img,
+    #header img#logoLeft,
+    #header .left-img,
+    #header .brand-left img,
+    header img:first-of-type {
+      position: absolute !important;
+      left: 14px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      height: calc(100% - 20px) !important;
+      width: auto !important;
+    }
+    header img.right-img,
+    header .brand-right img,
+    #header img.right-img,
+    #header .brand-right img,
+    header img:last-of-type {
+      position: absolute !important;
+      right: 14px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      height: calc(100% - 20px) !important;
+      width: auto !important;
+    }
+    /* mini-nav (matches On-Site) */
+    #wholehog-nav{
+      width:100%; margin:12px auto;
+      display:flex; justify-content:center; align-items:center;
+      gap:12px; flex-wrap:wrap; text-align:center;
+    }
+    #wholehog-nav a{ display:inline-block; white-space:nowrap; width:auto; float:none!important; }
+    /* page chrome similar to On-Site */
+    body { font-family: system-ui,-apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f6f6f6; margin:0; }
+    main { max-width: 960px; margin: 0 auto; padding: 24px; }
+    .btn { display:inline-flex; align-items:center; padding:8px 14px; border:1px solid #ddd; border-radius:12px; text-decoration:none; color:#111; background:#fff; }
+    .btn:hover { box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+    .container{ max-width:960px; margin:0 auto; padding:24px; }
+    .card{ background:#fff; border:1px solid #eee; border-radius:14px; padding:16px; margin-top:16px; }
+    .flex{ display:flex; gap:12px; flex-wrap:wrap; }
+    label{ display:flex; flex-direction:column; font-size:12px; color:#555; }
+    .input, input, select{ padding:8px 10px; border:1px solid #ddd; border-radius:10px; min-width:180px; }
+    .muted{ color:#666; font-size:12px; }
+    .badge{ font-size:12px; background:#f0f0f0; padding:6px 8px; border-radius:10px; }
+    .pick-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .pick-row button{ padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:10px; cursor:pointer; }
+    .pick-row button.sel{ border-color:#111; font-weight:600; }
+    .totalbar{ display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:10px; font-size:18px; }
+    .total{ font-weight:800; }
+  </style>
+  <!-- WH HARD HEADER END -->
+
+  <style id="score-highlight-style">
+/* Yellow highlight for selected/filled scores */
+.score-selected { background: yellow !important; color: black !important; }
+
+/* If your scores are buttons, make the selection obvious */
+button[data-score].score-selected { outline: 2px solid #d4b000; }
+
+/* Radios are tiny—highlight their label if present */
+label.score-selected { background: yellow !important; color: black !important; border-radius: 4px; padding: 2px 4px; }
+</style>
+</head>
+<body>
+  <header class="header" style="height:2.25in; min-height:2.25in; position:relative; display:flex; align-items:center; justify-content:center;">
+    <img id="logoLeft" src="Legion whole hog logo.png" alt="Logo"/>
+    <h1 style="margin:0; text-align:center;">Whole Hog — Blind Taste</h1>
+    <img class="right-img" src="AL Medallion.png" alt="Logo"/>
+  </header>
+
+  <!-- two-button nav under header -->
+  <div id="wholehog-nav">
+    <a class="btn" href="./landing.html">Home</a>
+    <a class="btn" href="./leaderboard.html">Go to Leaderboard</a>
+  </div>
+
+  <main class="container">
+    
+      <div id="teamHint" class="muted" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="flex" style="justify-content:space-between; align-items:center;">
+        <span class="badge">Pick scores below; buttons are horizontal. Total updates automatically.</span>
+      </div>
+
+      <div style="margin-top:10px;">
+        <h3 style="margin:8px 0 4px;">Appearance (2–40)</h3>
+        <div id="pickAppearance" class="pick-row"></div>
+
+        <h3 style="margin:14px 0 4px;">Tenderness (2–40)</h3>
+        <div id="pickTenderness" class="pick-row"></div>
+
+        <h3 style="margin:14px 0 4px;">Taste (4–80)</h3>
+        <div id="pickTaste" class="pick-row"></div>
+
+        <div class="totalbar">
+          <span>Total:</span>
+          <span id="totalVal" class="total">0</span>
+        </div>
+
+        <div style="display:flex; justify-content:center; margin-top:10px;">
+          <div id="bt-inline-selects" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:6px 0 8px;">
+  <label style="display:flex;flex-direction:column;">Judge
+    <select id="btJudgeSel" class="input" style="min-width:180px;">
+      <option value="">Loading judges…</option>
+    </select>
+  </label>
+  <label style="display:flex;flex-direction:column;">Chip #
+    <select id="btChipSel" class="input" style="min-width:140px;">
+      <option value="">Loading chips…</option>
+    </select>
+  </label>
+  <!-- hidden tiny fallback if no visible total element exists -->
+  <input id="btScoreFallback" type="number" step="0.5" min="0" max="10" style="display:none;">
+</div><button id="saveBtn" class="btn">Save Blind Taste</button>
+        </div>
+        <div id="status" class="muted" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const supabase = createClient("https://wiolulxxfyetvdpnfusq.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpb2x1bHh4ZnlldHZkcG5mdXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg4NjYsImV4cCI6MjA3NDMxNDg2Nn0.zrZI3_Ex3mfqkjKuWB9k-Gec77P7aqf6OJxKvGyxyTc");
+
+    const judgeEl = document.getElementById("judgeNo");
+    const chipEl  = document.getElementById("chipNo");
+    const teamHint = document.getElementById("teamHint");
+    const statusEl = document.getElementById("status");
+    const totalEl  = document.getElementById("totalVal");
+
+    const appRow = document.getElementById("pickAppearance");
+    const tenRow = document.getElementById("pickTenderness");
+    const tasRow = document.getElementById("pickTaste");
+
+    let app = 0, ten = 0, tas = 0;
+
+    function setStatus(t, good){
+      statusEl.textContent = t || "";
+      statusEl.style.color = good ? "#0a0" : "#c00";
+    }
+    function fmt(n){ return Number(n||0).toFixed(0); }
+    function updateTotal(){ totalEl.textContent = fmt(app + ten + tas); }
+
+    function buildPicker(rowEl, values, onPick){
+      rowEl.innerHTML = "";
+      for (var i=0;i<values.length;i++){
+        (function(v){
+          var b = document.createElement("button");
+          b.type = "button";
+          b.textContent = v;
+          b.addEventListener("click", function(){
+            // toggle selected class on this row
+            var kids = rowEl.querySelectorAll("button"); 
+            for (var j=0;j<kids.length;j++){ kids[j].classList.remove("sel"); }
+            b.classList.add("sel");
+            onPick(v);
+            updateTotal();
+          });
+          rowEl.appendChild(b);
+        })(values[i]);
+      }
+    }
+
+    // Scales per the official sheet: Appearance 2–40, Tenderness 2–40 (steps of 2), Taste 4–80 (step 4)
+    function range(step, max, start){ 
+      var out=[], s=(start||step); 
+      for (var v=s; v<=max; v+=step) out.push(v); 
+      return out;
+    }
+    buildPicker(appRow, range(2, 40, 2), function(v){ app = v; });
+    buildPicker(tenRow, range(2, 40, 2), function(v){ ten = v; });
+    buildPicker(tasRow, range(4, 80, 4), function(v){ tas = v; });
+
+    // Lookup team by Chip # as user types
+    async function lookupTeam() {
+      const chip = (chipEl.value||"").trim().toUpperCase();
+      if (!chip) { teamHint.textContent = ""; return; }
+      const { data, error } = await supabase.from("teams")
+        .select("team_name, site_number")
+        .eq("chip_number", chip)
+        .maybeSingle();
+      if (error){ teamHint.textContent = "Lookup failed: " + error.message; return; }
+      teamHint.textContent = data ? ("Team: " + (data.team_name||"") + " (Site " + (data.site_number||"") + ")") : "No team found for that chip.";
+    }
+    chipEl.addEventListener("input", lookupTeam);
+
+    document.getElementById("saveBtn").addEventListener("click", async function(){
+      setStatus("", true);
+      const judge = (judgeEl.value||"").trim();
+      const chip  = (chipEl.value||"").trim().toUpperCase();
+
+      if (!chip){ setStatus("Enter Chip/Code #.", false); return; }
+      if (!judge){ setStatus("Enter Judge No.", false); return; }
+      if (!app || !ten || !tas){ setStatus("Pick a value for Appearance, Tenderness, and Taste.", false); return; }
+
+      // ensure chip exists in teams
+      const { data: team, error: tErr } = await supabase.from("teams")
+        .select("chip_number")
+        .eq("chip_number", chip)
+        .maybeSingle();
+      if (tErr){ setStatus("Team check failed: " + tErr.message, false); return; }
+      if (!team){ setStatus("Chip # not found in Teams. Add it on the On-Site page.", false); return; }
+
+      // insert three category rows so leaderboard per category works
+      const rows = [
+        { chip_number: chip, score: app, category: "Appearance", judge_number: judge },
+        { chip_number: chip, score: ten, category: "Tenderness", judge_number: judge },
+        { chip_number: chip, score: tas, category: "Taste",      judge_number: judge }
+      ];
+      const { error: insErr } = await supabase.from("scores").insert(rows);
+      if (insErr){ setStatus(insErr.message, false); return; }
+
+      setStatus("Blind Taste saved.", true);
+      // reset selections visually
+      [appRow,tenRow,tasRow].forEach(function(row){
+        var kids = row.querySelectorAll("button"); 
+        for (var j=0;j<kids.length;j++){ kids[j].classList.remove("sel"); }
+      });
+      app = ten = tas = 0;
+      updateTotal();
+      judgeEl.value = "";
+      // keep chip so judges can continue entering for the same code if needed
+    });
+
+    // initial
+    updateTotal();
+  </script>
+
+
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<!-- BT_SYNC_START -->
+<script>
+(function(){
+  document.addEventListener("DOMContentLoaded", async () => {
+    const SUPA_URL = "https://wiolulxxfyetvdpnfusq.supabase.co";
+    const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpb2x1bHh4ZnlldHZkcG5mdXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg4NjYsImV4cCI6MjA3NDMxNDg2Nn0.zrZI3_Ex3mfqkjKuWB9k-Gec77P7aqf6OJxKvGyxyTc";
+
+    // Ensure a Supabase client
+    let client = null;
+    try{
+      if (window.supabase && typeof window.supabase.from === "function") {
+        client = window.supabase;
+      } else if (typeof supabase !== "undefined" && typeof supabase.createClient === "function") {
+        client = supabase.createClient(SUPA_URL, SUPA_KEY);
+        window.supabase = client;
+      }
+    }catch(e){ console.warn("supabase init error", e); }
+
+    const $ = (id) => document.getElementById(id);
+    const els = { j: $("btJudgeSel"), c: $("btChipSel") };
+
+    function showEmpty(selectEl, text){
+      if (!selectEl) return;
+      selectEl.innerHTML = `<option value="">${text}</option>`;
+      selectEl.setAttribute("disabled","disabled");
+    }
+    function setOptions(selectEl, rows, placeholder){
+      if (!selectEl) return;
+      if (!rows || !rows.length) return showEmpty(selectEl, `No ${placeholder} found`);
+      selectEl.removeAttribute("disabled");
+      selectEl.innerHTML = `<option value="">Select ${placeholder}…</option>` + rows.map(r=>`<option value="${r.value}">${r.label}</option>`).join("");
+    }
+
+    // Try a list of table names until one works (exists + readable)
+    async function resolveTable(candidates){
+      if (!client) throw new Error("Supabase client not ready");
+      for (const name of candidates){
+        try{
+          const { data, error } = await client.from(name).select("*").limit(1);
+          if (!error) return name;               // success: table exists and is readable
+          if (error && (String(error.code).includes("42P01"))) continue; // table not found, try next
+          // Other errors (401/RLS) mean table exists but no read policy:
+          if (error) { console.warn(`Table ${name} exists but is not readable (RLS).`, error); return name; }
+        }catch(e){ console.warn("resolveTable error for", name, e); }
+      }
+      return null;
+    }
+
+    // Pick the first present, non-empty column from each candidate list
+    function pick(row, candidates){
+      for (const k of candidates){
+        if (row && Object.prototype.hasOwnProperty.call(row,k) && row[k] != null && String(row[k]).trim() !== "") return row[k];
+      }
+      return null;
+    }
+
+    async function loadJudges(){
+      try{
+        const judgeTables = ["judges","Judges","judge","Judge","judge_list","JudgeList"];
+        const jTable = await resolveTable(judgeTables);
+        if (!jTable) { showEmpty(els.j, "No Judges table"); return; }
+
+        const { data, error } = await client.from(jTable).select("*").order("id",{ascending:true}).limit(1000);
+        if (error) { console.warn("judges read error:", error); showEmpty(els.j, "No Judges (enable SELECT policy)"); return; }
+
+        const rows = (data||[]).map(r=>{
+          const name = pick(r, ["name","judge_name","display_name","full_name","Name","JudgeName"]) || String(pick(r,["id","ID"])||"").trim();
+          return name ? ({ value: name, label: name }) : null;
+        }).filter(Boolean).sort((a,b)=> (a.label||"").localeCompare(b.label||""));
+        setOptions(els.j, rows, "Judge");
+      }catch(e){
+        console.warn("loadJudges fatal:", e);
+        showEmpty(els.j, "No Judges (client/init)");
+      }
+    }
+
+    async function loadChips(){
+      try{
+        const teamTables = ["teams","Teams","team","Team","team_list","TeamList"];
+        const tTable = await resolveTable(teamTables);
+        if (!tTable) { showEmpty(els.c, "No Chips table"); return; }
+
+        const { data, error } = await client.from(tTable).select("*").limit(2000);
+        if (error) { console.warn("teams read error:", error); showEmpty(els.c, "No Chips (enable SELECT policy)"); return; }
+
+        const rows = (data||[]).map(r=>{
+          // Try many likely chip fields
+          const chip = String(pick(r, [
+            "chip_number","chip","Chip","chipnum","chip_num","chipno","chip_no","chipnumber","chipid","chip_id","Chip#","ChipNo"
+          ]) || "").toUpperCase();
+          const team = pick(r, ["team_name","team","Team","name","Name","teamname","TeamName"]) || "";
+          return chip ? ({ value: chip, label: (team ? `${chip} — ${team}` : chip) }) : null;
+        }).filter(Boolean).sort((a,b)=> (a.label||"").localeCompare(b.label||""));
+        setOptions(els.c, rows, "Chip");
+      }catch(e){
+        console.warn("loadChips fatal:", e);
+        showEmpty(els.c, "No Chips (client/init)");
+      }
+    }
+
+    await Promise.all([loadJudges(), loadChips()]);
+  });
+})();
+</script>
+<!-- BT_SYNC_END -->
+
+  <script src="./forceChipNumbersOnly.js"></script>
+
+  <script type="module" src="./supabaseClient.js"></script>
+
+  <script type="module" src="./saveBlindTaste.js"></script>
+
+  <script id="score-highlight-script">
+(function(){
+  function { return document.querySelector(sel); }
+  function (sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+
+  // Apply/clear yellow highlight on an element (or its label for radios)
+  function setHighlight(el, on){
+    if (!el) return;
+    // Prefer the input/select itself
+    if (el.tagName === 'INPUT' && el.type === 'radio') {
+      // For radios, try to highlight the nearest label
+      var lbl = el.closest('label');
+      if (lbl) { lbl.classList.toggle('score-selected', !!on); return; }
+    }
+    el.classList.toggle('score-selected', !!on);
+  }
+
+  // Clear highlight from siblings in the same logical group (for buttons or radios)
+  function clearGroup(el){
+    var cat = el.getAttribute('data-category');
+    if (cat){
+      ('[data-category="'+cat+'"][data-score]').forEach(function(sib){
+        if (sib !== el) setHighlight(sib, false);
+      });
+      return;
+    }
+    if (el.name && el.type === 'radio'){
+      ('input[type="radio"][name="'+el.name+'"]').forEach(function(sib){
+        if (sib !== el){
+          setHighlight(sib, false);
+        }
+      });
+    }
+  }
+
+  function wire(){
+    // NUMBER inputs (e.g., <input data-score type="number">)
+    ('input[data-score], input.score-field').forEach(function(inp){
+      var update = function(){
+        var v = (inp.value==null ? '' : String(inp.value).trim());
+        setHighlight(inp, v !== '' && !Number.isNaN(Number(v)));
+      };
+      inp.addEventListener('input', update, {passive:true});
+      inp.addEventListener('change', update, {passive:true});
+      update(); // initial
+    });
+
+    // SELECT dropdowns (e.g., <select name="appearance">)
+    ('select[name*="appear" i], select[name*="tender" i], select[name*="flavor" i], select[data-score], select.score-field').forEach(function(sel){
+      var update = function(){
+        var v = (sel.value==null ? '' : String(sel.value).trim());
+        setHighlight(sel, v !== '' && !Number.isNaN(Number(v)));
+      };
+      sel.addEventListener('change', update, {passive:true});
+      sel.addEventListener('input', update, {passive:true});
+      update();
+    });
+
+    // RADIO groups (e.g., <input type="radio" name="appearance" value="8">)
+    ('input[type="radio"][name*="appear" i], input[type="radio"][name*="tender" i], input[type="radio"][name*="flavor" i]').forEach(function(r){
+      var onChange = function(){
+        clearGroup(r);
+        setHighlight(r, r.checked);
+      };
+      r.addEventListener('change', onChange);
+      // initial
+      if (r.checked) setHighlight(r, true);
+    });
+
+    // CLICKABLE NUMBER BUTTONS (e.g., <button data-category="appearance" data-score="8">8</button>)
+    ('button[data-score]').forEach(function(btn){
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        clearGroup(btn);
+        setHighlight(btn, true);
+        // If an associated hidden field exists, set it (optional)
+        var cat = btn.getAttribute('data-category');
+        var val = btn.getAttribute('data-score');
+        if (cat){
+          var hidden = document.querySelector('input[type="hidden"][name="'+cat+'"], input[name="'+cat+'"].score-field, input[name="'+cat+'"][data-score]');
+          if (hidden){
+            hidden.value = val;
+            hidden.dispatchEvent(new Event('input')); // trigger total recalculation if any
+            hidden.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', wire);
+  window.addEventListener('load', wire); // run again if content loads late
+})();
+</script>
+
+  <button id="save-blind-taste" type="button">Save Blind Taste</button>
+
+  <script id="blind-taste-inline">
+(function(){
+  var SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+  var SUPABASE_KEY = "YOUR-REAL-ANON-KEY";
+  if (!window.supabase || !window.supabase.createClient) { alert("Supabase failed to load."); return; }
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function $(sel){ return document.querySelector(sel); }
+  function $all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  function firstSel(list){ for (var i=0;i<list.length;i++){ var el=$(list[i]); if(el) return el; } return null; }
+
+  function getJudge(){ var el=firstSel(["#judge-select","select[name='judge']","select[name*='judge' i]"]); return el?String(el.value||"").trim():""; }
+  function getChip(){  var el=firstSel(["#chip-select","select[name='chip']","select[name*='chip' i]"]);   return el?String(el.value||"").trim():""; }
+
+  function scoreControls(){ return $all(
+    "input[data-score], input.score-field, input[type='number'][name*='appear' i], input[type='number'][name*='tender' i], input[type='number'][name*='flavor' i]," +
+    "select[data-score], select.score-field, select[name*='appear' i], select[name*='tender' i], select[name*='flavor' i]," +
+    "input[type='radio'][name*='appear' i], input[type='radio'][name*='tender' i], input[type='radio'][name*='flavor' i]," +
+    "button[data-score]"
+  );}
+
+  function setHighlight(el,on){
+    if(!el) return;
+    if (el.tagName==="INPUT" && el.type==="radio"){
+      var lbl=el.closest("label"); if(lbl){ lbl.classList.toggle("score-selected",!!on); return; }
+    }
+    el.classList.toggle("score-selected", !!on);
+  }
+
+  function clearGroup(el){
+    var cat = el.getAttribute("data-category");
+    if (cat){
+      $all('[data-category="'+cat+'"][data-score]').forEach(function(sib){ if(sib!==el) setHighlight(sib,false); });
+      return;
+    }
+    if (el.name && el.type==="radio"){
+      $all('input[type="radio"][name="'+el.name+'"]').forEach(function(sib){ if(sib!==el) setHighlight(sib,false); });
+    }
+  }
+
+  function wireHighlighting(){
+    // number inputs
+    $all("input[data-score], input.score-field, input[type='number'][name*='appear' i], input[type='number'][name*='tender' i], input[type='number'][name*='flavor' i]")
+      .forEach(function(inp){
+        var upd=function(){ var v=(inp.value==null?"":String(inp.value).trim()); setHighlight(inp, v!=="" && !Number.isNaN(Number(v))); };
+        inp.addEventListener("input",upd,{passive:true}); inp.addEventListener("change",upd,{passive:true}); upd();
+      });
+    // selects
+    $all("select[data-score], select.score-field, select[name*='appear' i], select[name*='tender' i], select[name*='flavor' i]")
+      .forEach(function(sel){
+        var upd=function(){ var v=(sel.value==null?"":String(sel.value).trim()); setHighlight(sel, v!=="" && !Number.isNaN(Number(v))); };
+        sel.addEventListener("change",upd,{passive:true}); sel.addEventListener("input",upd,{passive:true}); upd();
+      });
+    // radios
+    $all("input[type='radio'][name*='appear' i], input[type='radio'][name*='tender' i], input[type='radio'][name*='flavor' i]")
+      .forEach(function(r){ var onChange=function(){ clearGroup(r); setHighlight(r, r.checked); }; r.addEventListener("change",onChange); if(r.checked) setHighlight(r,true); });
+    // buttons with data-score
+    $all("button[data-score]").forEach(function(btn){
+      btn.addEventListener("click",function(ev){
+        ev.preventDefault(); clearGroup(btn); setHighlight(btn,true);
+        var cat=btn.getAttribute("data-category"), val=btn.getAttribute("data-score");
+        if(cat){
+          var hidden=document.querySelector('input[type="hidden"][name="'+cat+'"], input[name="'+cat+'"].score-field, input[name="'+cat+'"][data-score]');
+          if(hidden){ hidden.value=val; hidden.dispatchEvent(new Event("input")); hidden.dispatchEvent(new Event("change")); }
+        }
+      });
+    });
+  }
+
+  function computeTotal(){
+    var total=0;
+    scoreControls().forEach(function(c){ var v=(c.value==null?"":String(c.value).trim()), n=Number(v); if(!Number.isNaN(n)) total+=n; });
+    var totalEl = firstSel(["#score-total","input[name='score_total']"]); if(totalEl) totalEl.value=String(total);
+    return total;
+  }
+
+  async function duplicateExists(judgeId, chipNum){
+    var res = await sb.from("blind_taste").select("id", {count:"exact", head:true})
+      .eq("judge_id", judgeId).eq("chip_number", chipNum);
+    if(res.error){ console.error("Duplicate check error:", res.error); alert("Warning: could not verify duplicates."); return true; }
+    return (res.count||0)>0;
+  }
+
+  function clearForm(){
+    var form = firstSel(["#blind-taste-form","form[id*='blind' i]","form[id*='taste' i]","form"]);
+    if (form && form.reset) form.reset();
+    scoreControls().forEach(function(c){ setHighlight(c,false); });
+    computeTotal();
+  }
+
+  async function onSave(){
+    alert("Saving…");
+    var judgeId = getJudge();
+    var chipRaw = getChip();
+    var chipNum = Number(chipRaw);
+    if(!judgeId){ alert("Please select a Judge."); return; }
+    if(!chipRaw || Number.isNaN(chipNum) || chipNum<=0){ alert("Please select a valid Chip #."); return; }
+
+    var total = computeTotal();
+    var row = { judge_id: judgeId, chip_number: chipNum, score_total: total };
+
+    var extras=1;
+    scoreControls().forEach(function(c){
+      var name=(c.name||c.id||"").toLowerCase();
+      var v=Number((c.value==null?"":String(c.value).trim()));
+      if(Number.isNaN(v)) return;
+      if(/appear/.test(name)) row.score_appearance=v;
+      else if(/tender/.test(name)) row.score_tenderness=v;
+      else if(/flavor|taste/.test(name)) row.score_flavor=v;
+      else { row["score"+(extras++)]=v; }
+    });
+
+    if (await duplicateExists(judgeId, chipNum)){ alert("This Judge + Chip # has already been saved."); return; }
+
+    var btn = document.getElementById("save-blind-taste"); if(btn) btn.disabled=true;
+    var res = await sb.from("blind_taste").insert([row]).select().single();
+    if(btn) btn.disabled=false;
+
+    if(res.error){
+      console.error("Insert error:", res.error);
+      alert(res.error.code==="23505" ? "Duplicate Judge + Chip #." : (res.error.message || "Save failed."));
+      return;
+    }
+    alert("Saved! Chip #"+res.data.chip_number+", Judge "+res.data.judge_id+".");
+    clearForm();
+  }
+
+  function wire(){
+    wireHighlighting(); computeTotal();
+    var btn = document.getElementById("save-blind-taste");
+    if (btn) { btn.addEventListener("click", function(e){ e.preventDefault(); onSave(); }); }
+    else {
+      var form = firstSel(["#blind-taste-form","form"]); if(form){ form.addEventListener("submit", function(e){ e.preventDefault(); onSave(); }); }
+    }
+  }
+  document.addEventListener("DOMContentLoaded", wire);
+})();
+</script>
+
+  <script id="blind-taste-inline-rest">
+(function(){
+  // ========== CONFIG ==========
+  var SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+  var SUPABASE_KEY = "YOUR-REAL-ANON-KEY";
+  var REST = SUPABASE_URL.replace(/\/+$/,'') + "/rest/v1";
+
+  // ========== HELPERS ==========
+  function $(sel){ return document.querySelector(sel); }
+  function $all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  function firstSel(arr){ for (var i=0;i<arr.length;i++){ var el=$(arr[i]); if (el) return el; } return null; }
+
+  function getJudge(){ var el = firstSel(["#judge-select","select[name='judge']","select[name*='judge' i]"]); return el ? String(el.value||"").trim() : ""; }
+  function getChip(){  var el = firstSel(["#chip-select","select[name='chip']","select[name*='chip' i]"]);   return el ? String(el.value||"").trim() : ""; }
+
+  function scoreControls(){ return $all(
+    "input[data-score], input.score-field, input[type='number'][name*='appear' i], input[type='number'][name*='tender' i], input[type='number'][name*='flavor' i]," +
+    "select[data-score], select.score-field, select[name*='appear' i], select[name*='tender' i], select[name*='flavor' i]," +
+    "input[type='radio'][name*='appear' i], input[type='radio'][name*='tender' i], input[type='radio'][name*='flavor' i]," +
+    "button[data-score]"
+  );}
+
+  function setHighlight(el,on){
+    if (!el) return;
+    if (el.tagName==="INPUT" && el.type==="radio"){
+      var lbl = el.closest("label"); if (lbl) { lbl.classList.toggle("score-selected", !!on); return; }
+    }
+    el.classList.toggle("score-selected", !!on);
+  }
+  function clearGroup(el){
+    var cat = el.getAttribute("data-category");
+    if (cat){
+      $all('[data-category="'+cat+'"][data-score]').forEach(function(sib){ if (sib!==el) setHighlight(sib,false); });
+      return;
+    }
+    if (el.name && el.type==="radio"){
+      $all('input[type="radio"][name="'+el.name+'"]').forEach(function(sib){ if (sib!==el) setHighlight(sib,false); });
+    }
+  }
+
+  function wireHighlighting(){
+    // number inputs
+    $all("input[data-score], input.score-field, input[type='number'][name*='appear' i], input[type='number'][name*='tender' i], input[type='number'][name*='flavor' i]").forEach(function(inp){
+      var upd = function(){ var v=(inp.value==null?"":String(inp.value).trim()); setHighlight(inp, v!=="" && !Number.isNaN(Number(v))); };
+      inp.addEventListener("input", upd, {passive:true}); inp.addEventListener("change", upd, {passive:true}); upd();
+    });
+    // selects
+    $all("select[data-score], select.score-field, select[name*='appear' i], select[name*='tender' i], select[name*='flavor' i]").forEach(function(sel){
+      var upd = function(){ var v=(sel.value==null?"":String(sel.value).trim()); setHighlight(sel, v!=="" && !Number.isNaN(Number(v))); };
+      sel.addEventListener("change", upd, {passive:true}); sel.addEventListener("input", upd, {passive:true}); upd();
+    });
+    // radios
+    $all("input[type='radio'][name*='appear' i], input[type='radio'][name*='tender' i], input[type='radio'][name*='flavor' i]").forEach(function(r){
+      var onChange = function(){ clearGroup(r); setHighlight(r, r.checked); };
+      r.addEventListener("change", onChange); if (r.checked) setHighlight(r,true);
+    });
+    // buttons with data-score
+    $all("button[data-score]").forEach(function(btn){
+      btn.addEventListener("click", function(ev){
+        ev.preventDefault(); clearGroup(btn); setHighlight(btn,true);
+        var cat=btn.getAttribute("data-category"), val=btn.getAttribute("data-score");
+        if (cat){
+          var hidden = document.querySelector('input[type="hidden"][name="'+cat+'"], input[name="'+cat+'"].score-field, input[name="'+cat+'"][data-score]');
+          if (hidden){ hidden.value=val; hidden.dispatchEvent(new Event("input")); hidden.dispatchEvent(new Event("change")); }
+        }
+      });
+    });
+  }
+
+  function computeTotal(){
+    var total = 0;
+    scoreControls().forEach(function(c){
+      var v = (c.value==null ? "" : String(c.value).trim());
+      var n = Number(v); if (!Number.isNaN(n)) total += n;
+    });
+    var totalEl = firstSel(["#score-total","input[name='score_total']"]);
+    if (totalEl) totalEl.value = String(total);
+    return total;
+  }
+
+  // ========== REST to Supabase ==========
+  function sHeaders(extra){
+    var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+    if (extra) { for (var k in extra) h[k]=extra[k]; }
+    return h;
+  }
+
+  async function duplicateExists(judgeId, chipNum){
+    var url = REST + '/blind_taste?select=id&judge_id=eq.' + encodeURIComponent(judgeId) + '&chip_number=eq.' + encodeURIComponent(chipNum) + '&limit=1';
+    var res = await fetch(url, { method:'GET', headers: sHeaders({ 'Accept': 'application/json' }) });
+    if (!res.ok){ console.error('dup check http', res.status); alert('Warning: could not verify duplicates.'); return true; }
+    var rows = await res.json();
+    return Array.isArray(rows) && rows.length > 0;
+  }
+
+  async function insertRow(row){
+    var res = await fetch(REST + '/blind_taste', {
+      method: 'POST',
+      headers: sHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+      body: JSON.stringify(row)
+    });
+    if (!res.ok){
+      var msg = await res.text().catch(function(){ return ''; });
+      return { error: { message: msg || ('HTTP ' + res.status) } };
+    }
+    var data = await res.json();
+    return { data: Array.isArray(data) ? data[0] : data };
+  }
+
+  function clearForm(){
+    var form = firstSel(["#blind-taste-form","form[id*='blind' i]","form[id*='taste' i]","form"]);
+    if (form && form.reset) form.reset();
+    scoreControls().forEach(function(c){ setHighlight(c,false); });
+    computeTotal();
+  }
+
+  async function onSave(){
+    alert("Saving…");
+
+    var judgeId = getJudge();
+    var chipRaw = getChip();
+    var chipNum = Number(chipRaw);
+
+    if (!judgeId){ alert("Please select a Judge."); return; }
+    if (!chipRaw || Number.isNaN(chipNum) || chipNum <= 0){ alert("Please select a valid Chip #."); return; }
+
+    var total = computeTotal();
+    var row = { judge_id: judgeId, chip_number: chipNum, score_total: total };
+
+    var extras = 1;
+    scoreControls().forEach(function(c){
+      var name = (c.name || c.id || "").toLowerCase();
+      var v = Number((c.value==null ? "" : String(c.value).trim()));
+      if (Number.isNaN(v)) return;
+      if (/appear/.test(name)) row.score_appearance = v;
+      else if (/tender/.test(name)) row.score_tenderness = v;
+      else if (/flavor|taste/.test(name)) row.score_flavor = v;
+      else { row["score"+(extras++)] = v; }
+    });
+
+    if (await duplicateExists(judgeId, chipNum)){
+      alert("This Judge + Chip # has already been saved.");
+      return;
+    }
+
+    var btn = document.getElementById("save-blind-taste"); if (btn) btn.disabled = true;
+    var result = await insertRow(row);
+    if (btn) btn.disabled = false;
+
+    if (result.error){
+      console.error('insert error', result.error);
+      // If RLS or key wrong, you’ll see it here
+      alert(result.error.message || 'Save failed.');
+      return;
+    }
+
+    alert("Saved! Chip #"+result.data.chip_number+", Judge "+result.data.judge_id+".");
+    clearForm();
+  }
+
+  function wire(){
+    wireHighlighting(); computeTotal();
+    var btn = document.getElementById("save-blind-taste");
+    if (btn){ btn.addEventListener("click", function(e){ e.preventDefault(); onSave(); }); }
+    else {
+      var form = firstSel(["#blind-taste-form","form"]);
+      if (form){ form.addEventListener("submit", function(e){ e.preventDefault(); onSave(); }); }
+    }
+  }
+  document.addEventListener("DOMContentLoaded", wire);
+})();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

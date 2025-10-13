@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog Competition 2025</title>
+  <link rel="stylesheet" href="styles.css"/>
+
+<!-- WH HARD HEADER START -->
+<style id="wh-hard-header">
+:root { --wh-header-h: 2.25in; }
+header, .header, .app-header, .site-header, #header {
+  min-height: var(--wh-header-h) !important;
+  height: var(--wh-header-h) !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+header h1, .header h1, .app-header h1, .site-header h1, #header h1 {
+  margin: 0 !important;
+  line-height: 1.1 !important;
+}
+/* Left logo (common IDs/classes or first image) */
+header img#logoLeft,
+header .left-img,
+header .brand-left img,
+#header img#logoLeft,
+#header .left-img,
+#header .brand-left img,
+header img:first-of-type {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: calc(100% - 20px) !important;  /* fit inside header */
+  width: auto !important;
+}
+/* Right logo (common classes or last image) */
+header img.right-img,
+header .brand-right img,
+#header img.right-img,
+#header .brand-right img,
+header img:last-of-type {
+  position: absolute !important;
+  right: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: calc(100% - 20px) !important;
+  width: auto !important;
+}
+</style>
+<!-- WH HARD HEADER END -->
+
+
+
+
+
+
+<style id="wh-nav-style">
+    #wholehog-nav{
+      width:100%; margin:12px auto;
+      display:flex; justify-content:center; align-items:center;
+      gap:12px; flex-wrap:wrap; text-align:center;
+    }
+    #wholehog-nav a{ display:inline-block; white-space:nowrap; width:auto; float:none!important; }
+  </style>
+</head>
+<body>
+<header class="header" style="height:2.25in; min-height:2.25in; position:relative; display:flex; align-items:center; justify-content:center;"><img id="logoLeft" src="Legion whole hog logo.png" alt="Logo" />
+  
+  <h1 style="margin:0; text-align:center;">On-site Judging</h1>
+  
+<img class="right-img" src="AL Medallion.png" alt="Logo" /><div class="page-title" style="font-weight:700;font-size:1.4rem;margin-left:8px">On-site Judging</div>
+</header>
+<main>
+  <nav id="top-go-buttons" aria-label="Primary">
+  <a class="go-btn" id="go-home"        data-label="Home"               href="./index.html">Home</a>
+  <a class="go-btn" id="go-landing"     data-label="Go to Landing"      href="./landing.html">Go to Landing</a>
+  <a class="go-btn" id="go-leaderboard" data-label="Go to Leaderboard"  href="./leaderboard.html">Go to Leaderboard</a>
+  <a class="go-btn" id="go-blind"       data-label="Go to Blind Taste"  href="./blind.html">Go to Blind Taste</a>
+</nav>
+  <section id="scoring-card" class="card">
+    <h2>On-Site Scoring Card</h2>
+
+    <div class="row">
+      <div class="field">
+        <label for="team">Team</label>
+        <select id="team" name="team">
+          <option value="" selected disabled>Select team…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="chip">Chip #</label>
+        <input id="chip" name="chip" type="text" inputmode="numeric" placeholder="e.g., 104">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="judge">Judge</label>
+        <select id="judge" name="judge">
+          <option value="" selected disabled>Select judge…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="table">Table</label>
+        <input id="table" name="table" type="text" placeholder="e.g., A">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="4" placeholder="Optional notes…"></textarea>
+    </div>
+
+    <button id="submit-score" type="button">Submit Score</button>
+  </section>
+
+  <section id="recent" class="card">
+    <h2>Recent Submissions</h2>
+    <div id="recent-submissions">No submissions yet.</div>
+  </section>
+</main>
+
+<script>
+  // Guard against duplicate top-go-buttons injected by older scripts
+  (function(){
+    const nodes = Array.from(document.querySelectorAll('#top-go-buttons'));
+    if (nodes.length > 1) nodes.slice(1).forEach(n => n.remove());
+    const ids = new Set();
+    document.querySelectorAll('#top-go-buttons a').forEach(a=>{
+      if (ids.has(a.id)) a.remove(); else ids.add(a.id);
+    });
+  })();
+</script>
+</body>
+</html>

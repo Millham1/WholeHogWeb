@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Leaderboard</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  :root { --wh-header-h: 2.25in; --line:#e3e3e3; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111; background:#fafafa; }
+  header { height:var(--wh-header-h); min-height:var(--wh-header-h); position:relative; display:flex; align-items:center; justify-content:center; background:#fff; }
+  header h1 { margin:0; text-align:center; line-height:1.1; }
+  header img:first-of-type { position:absolute; left:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
+  header img:last-of-type  { position:absolute; right:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
+
+  /* centered red nav buttons */
+  #wholehog-nav{ max-width:820px; margin:12px auto; display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; text-align:center; }
+  #wholehog-nav a{ display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; padding:10px 14px; border-radius:10px; min-width:180px; background:#e53935; color:#000; font-weight:800; border:2px solid #000; text-decoration:none; }
+  #wholehog-nav a:hover{ filter:brightness(0.92); }
+
+  .container { max-width:1100px; margin:18px auto 28px; padding:0 14px; }
+  .card { border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff; }
+  .card + .card { margin-top:16px; }
+  .card h2 { margin:0 0 10px 0; }
+  .muted { color:#666; font-size:12px; }
+  .list .row { border-top:1px dashed #eaeaea; padding:10px 2px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .list .row:first-child { border-top:none; }
+  .list .row > div:nth-child(1) { min-width:260px; }
+  .list .row .score { font-weight:800; font-size:22px; min-width:90px; text-align:right; margin-left:auto; }
+  .badge { display:inline-block; padding:2px 6px; border:1px solid #bbb; border-radius:8px; font-size:11px; color:#444; background:#f5f5f5; vertical-align:middle; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; padding:8px 12px; border-radius:8px; border:1px solid #000; background:#e53935; color:#000; font-weight:800; text-decoration:none; cursor:pointer; }
+  .btn:hover{ filter:brightness(0.93); }
+  .chip { font-size:12px; color:#333; }
+</style>
+</head>
+<body>
+  <header class="header">
+    <img src="Legion whole hog logo.png" alt="Logo" onerror="this.style.display='none'"/>
+    <h1>Leaderboard</h1>
+    <img src="AL Medallion.png" alt="Logo" onerror="this.style.display='none'"/>
+  </header>
+
+  <nav id="wholehog-nav">
+    <a href="./landing.html">Go to Landing</a>
+    <a href="./onsite.html">Go to On-Site</a>
+    <a href="./blind.html">Go to Blind Taste</a>
+    <a href="./sauce.html">Go to Sauce Tasting</a>
+  </nav>
+
+  <main class="container">
+    <section class="card" id="onsite-card">
+      <h2>On-site Leaders</h2>
+      <div class="muted">Totals are the <strong>sum of all judges’ category points</strong>. Tie-breaker: <strong>Meat &amp; Sauce → Skin → Moisture</strong>. (No chip toggle on On-site.)</div>
+      <div id="onsite-list" class="list"></div>
+    </section>
+
+    <section class="card" id="division-tops-card">
+      <h2>Division Leaders (On-site)</h2>
+      <div class="muted">Top team from each division based on On-site totals (sum only). Uses <code>landingTeamDivisions</code>.</div>
+      <div id="division-tops-list" class="list"></div>
+    </section>
+
+    <section class="card" id="blind-card">
+      <h2>Blind Tasting</h2>
+      <div class="muted">Totals are the <strong>sum</strong> of all judges’ blind scores (no averaging).</div>
+      <div id="blind-list" class="list"></div>
+    </section>
+
+    <section class="card" id="sauce-card">
+      <h2>Sauce Tasting</h2>
+      <div class="muted">Totals are the <strong>sum</strong> of all judges’ sauce scores (no averaging).</div>
+      <div id="sauce-list" class="list"></div>
+    </section>
+  </main>
+
+  <script>
+  (function(){
+    'use strict';
+
+    // -------- helpers (read-only from localStorage) --------
+    function $(s){ return document.querySelector(s); }
+    function getArr(k){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : []; }catch(e){ return []; } }
+    function getMap(k){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : {}; }catch(e){ return {}; } }
+    function toInt(v){ var n = Number(v); return isFinite(n) ? Math.trunc(n) : 0; }
+    function norm(s){ return (s==null ? '' : String(s)).trim(); }
+    function keyOf(s){ return norm(s).toLowerCase().replace(/\s+/g,' '); } // normalize for matching
+    function teamName(r){ return norm(r && (r.team || r.teamName || r.name)); }
+
+    // -------- read data (no network; no fallbacks) --------
+    var onsiteRows = getArr('onsiteScores');
+    var blindRows  = getArr('blindScores');
+    var sauceRows  = getArr('sauceScores');
+    var chipMap    = getMap('chipByTeam');             // optional
+    var divMapRaw  = getMap('landingTeamDivisions');   // optional map {"Team":"Legion"|"Sons"}
+
+    // -------- On-site totals with tie-break categories --------
+    var CAT_ALIAS = {
+      meatSauce: ['meatSauce','meat_sauce','meat and sauce','meat&sauce','taste','flavor'],
+      skin:      ['skin','crackling'],
+      moisture:  ['moisture','juiciness'],
+      appearance:['appearance','visual','presentation'],
+      tenderness:['tenderness','texture']
+    };
+    function pickInt(scores, names){
+      if (!scores || typeof scores!=='object') return 0;
+      for (var i=0;i<names.length;i++){
+        var want = names[i];
+        if (scores[want] != null) return toInt(scores[want]);
+        var target = want.toLowerCase().replace(/[ _&]/g,'');
+        for (var k in scores){
+          if (!Object.prototype.hasOwnProperty.call(scores,k)) continue;
+          var kk = k.toLowerCase().replace(/[ _&]/g,'');
+          if (kk === target) return toInt(scores[k]);
+        }
+      }
+      return 0;
+    }
+    function buildOnsiteAgg(rows){
+      var by = new Map();
+      for (var i=0;i<rows.length;i++){
+        var r = rows[i]; var t = teamName(r); if (!t) continue;
+        var sc = r && r.scores || {};
+        var meatSauce = pickInt(sc, CAT_ALIAS.meatSauce);
+        var skin      = pickInt(sc, CAT_ALIAS.skin);
+        var moisture  = pickInt(sc, CAT_ALIAS.moisture);
+        var appearance= pickInt(sc, CAT_ALIAS.appearance);
+        var tenderness= pickInt(sc, CAT_ALIAS.tenderness);
+        var add = meatSauce + skin + moisture + appearance + tenderness;
+
+        var agg = by.get(t) || { team:t, total:0, cat:{meatSauce:0,skin:0,moisture:0} };
+        agg.total += add;
+        agg.cat.meatSauce += meatSauce;
+        agg.cat.skin      += skin;
+        agg.cat.moisture  += moisture;
+        by.set(t, agg);
+      }
+      var ORDER = ['meatSauce','skin','moisture'];
+      var list = Array.from(by.values()).sort(function(a,b){
+        if (b.total !== a.total) return b.total - a.total;
+        for (var j=0;j<ORDER.length;j++){
+          var k = ORDER[j];
+          var d = (b.cat[k]||0) - (a.cat[k]||0);
+          if (d) return d;
+        }
+        return 0;
+      }).map(function(x,idx,arr){
+        var tie = '';
+        if (idx>0 && x.total===arr[idx-1].total){
+          for (var j=0;j<ORDER.length;j++){
+            var k = ORDER[j];
+            if ((x.cat[k]||0)!==(arr[idx-1].cat[k]||0)){ tie = k; break; }
+          }
+        }
+        return { team:x.team, total:x.total, tie:tie };
+      });
+      return list;
+    }
+    function buildSimpleSum(rows){
+      var by = new Map();
+      for (var i=0;i<rows.length;i++){
+        var r = rows[i]; var t = teamName(r); if (!t) continue;
+        var add = 0;
+        if (r && r.score != null) add = toInt(r.score);
+        else if (r && r.scores && typeof r.scores==='object'){
+          for (var k in r.scores){ if (Object.prototype.hasOwnProperty.call(r.scores,k)) add += toInt(r.scores[k]); }
+        }
+        var agg = by.get(t) || { team:t, total:0 };
+        agg.total += add;
+        by.set(t, agg);
+      }
+      return Array.from(by.values()).sort(function(a,b){ return b.total - a.total; });
+    }
+
+    // -------- render helpers --------
+    function rowHTML_Onsite(obj){
+      var tieLabel = obj.tie==='meatSauce' ? 'Meat & Sauce' : obj.tie==='skin' ? 'Skin' : obj.tie==='moisture' ? 'Moisture' : '';
+      var badge = tieLabel ? '<span class="badge" title="Tie broken on '+tieLabel+'">tie: '+tieLabel+'</span>' : '';
+      return '<div class="row">'
+           +   '<div><div><strong>'+obj.team+'</strong> '+badge+'</div><div class="muted">on-site total (sum)</div></div>'
+           +   '<div class="score">'+obj.total+'</div><div></div>'
+           + '</div>';
+    }
+    function rowHTML_WithChip(team,total,subtitle,chipMap){
+      var safe = team.replace(/\s+/g,'_');
+      var chip = (chipMap && chipMap[team] != null) ? chipMap[team] : '';
+      return '<div class="row">'
+           +   '<div><div><strong>'+team+'</strong> <span id="chipspan_'+safe+'" class="chip" style="display:none">Chip: '+(chip||'N/A')+'</span></div><div class="muted">'+subtitle+'</div></div>'
+           +   '<div class="score">'+total+'</div>'
+           +   '<div><button type="button" class="btn" id="chipbtn_'+safe+'">Show chip</button></div>'
+           + '</div>';
+    }
+    function wireChipToggles(container){
+      var buttons = container.querySelectorAll('button.btn[id^="chipbtn_"]');
+      for (var i=0;i<buttons.length;i++){
+        (function(btn){
+          btn.addEventListener('click', function(){
+            var key = btn.id.replace(/^chipbtn_/,'');
+            var span = container.querySelector('#chipspan_'+key);
+            if (!span) return;
+            var show = span.style.display === 'none';
+            span.style.display = show ? 'inline' : 'none';
+            btn.textContent = show ? 'Hide chip' : 'Show chip';
+          });
+        })(buttons[i]);
+      }
+    }
+
+    // -------- paint main boards --------
+    function paintOnsite(){
+      var host = $('#onsite-list');
+      if (!host) return;
+      var items = buildOnsiteAgg(onsiteRows);
+      host.innerHTML = items.length ? items.map(rowHTML_Onsite).join('') : '<div class="muted">No on-site scores yet.</div>';
+    }
+    function paintBlind(){
+      var host = $('#blind-list');
+      if (!host) return;
+      var items = buildSimpleSum(blindRows);
+      host.innerHTML = items.length ? items.map(function(r){ return rowHTML_WithChip(r.team, r.total, 'blind total (sum)', chipMap); }).join('') : '<div class="muted">No blind tasting scores yet.</div>';
+      wireChipToggles(host);
+    }
+    function paintSauce(){
+      var host = $('#sauce-list');
+      if (!host) return;
+      var items = buildSimpleSum(sauceRows);
+      host.innerHTML = items.length ? items.map(function(r){ return rowHTML_WithChip(r.team, r.total, 'sauce total (sum)', chipMap); }).join('') : '<div class="muted">No sauce tasting scores yet.</div>';
+      wireChipToggles(host);
+    }
+
+    // -------- Division Leaders (On-site) --------
+    function paintDivisionLeaders(){
+      var host = $('#division-tops-list');
+      if (!host) return;
+
+      // Build on-site sums (team -> total) for lookup
+      var totals = {};
+      var agg = buildOnsiteAgg(onsiteRows);
+      for (var i=0;i<agg.length;i++){ totals[agg[i].team] = agg[i].total; }
+
+      // Normalize mapping names to match teams
+      var teamsSeen = new Map(); // normalized -> display
+      for (var i2=0;i2<agg.length;i2++){ teamsSeen.set(keyOf(agg[i2].team), agg[i2].team); }
+
+      var legionRows = [];
+      var sonsRows   = [];
+      for (var name in divMapRaw){
+        if (!Object.prototype.hasOwnProperty.call(divMapRaw,name)) continue;
+        var div = String(divMapRaw[name]||'').toLowerCase();
+        if (div!=='legion' && div!=='sons') continue;
+        var disp = teamsSeen.get(keyOf(name));
+        if (!disp) continue; // mapped team not in onsite rows
+        var tot = totals[disp] || 0;
+        if (div==='legion') legionRows.push({team:disp,total:tot});
+        else sonsRows.push({team:disp,total:tot});
+      }
+      function pickTop(rows){
+        if (!rows.length) return { names:[], score:null };
+        var max = rows[0].total;
+        for (var i3=1;i3<rows.length;i3++){ if (rows[i3].total > max) max = rows[i3].total; }
+        var names = [];
+        for (var j=0;j<rows.length;j++){ if (rows[j].total === max) names.push(rows[j].team); }
+        return { names:names, score:max };
+      }
+      var topLegion = pickTop(legionRows);
+      var topSons   = pickTop(sonsRows);
+
+      var row = function(label,obj){
+        if (!obj.names.length){
+          return '<div class="row"><div><div><strong>'+label+'</strong></div><div class="muted">No qualifying team</div></div><div class="score">–</div><div></div></div>';
+        }
+        return '<div class="row">'
+             +   '<div><div><strong>'+label+':</strong> '+obj.names.join(' & ')+'</div><div class="muted">on-site total (sum)</div></div>'
+             +   '<div class="score">'+obj.score+'</div><div></div>'
+             + '</div>';
+      };
+      host.innerHTML = row('Legion', topLegion) + row('Sons', topSons);
+    }
+
+    function paintAll(){
+      paintOnsite();
+      paintDivisionLeaders();
+      paintBlind();
+      paintSauce();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', paintAll); else paintAll();
+
+    // repaint when returning to tab or when storage changes (same-origin tabs)
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) paintAll(); });
+    window.addEventListener('storage', function(e){
+      if (!e) return;
+      if (['onsiteScores','blindScores','sauceScores','chipByTeam','landingTeamDivisions'].indexOf(e.key) !== -1){
+        // refresh in-memory datasets and repaint
+        onsiteRows = getArr('onsiteScores');
+        blindRows  = getArr('blindScores');
+        sauceRows  = getArr('sauceScores');
+        chipMap    = getMap('chipByTeam');
+        divMapRaw  = getMap('landingTeamDivisions');
+        paintAll();
+      }
+    });
+  })();
+  </script>
+
+
+<!-- Build Report (CSV) -->
+<div id="wh-build-report-container" style="width:100%;display:flex;justify-content:center;margin:20px 0 32px;"></div>
+
+<script id="wh-build-report-logic">
+(function(){
+  "use strict";
+  const getArr = k => { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):[]; }catch{ return []; } };
+  const getMap = k => { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):{}; }catch{ return {}; } };
+  const norm   = s => (s==null ? '' : String(s)).trim();
+  const toInt  = v => { const n=Number(v); return Number.isFinite(n)? Math.trunc(n) : 0; };
+  const csvField = x => { const s=(x==null?'':String(x)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+
+  const CAT = {
+    meatSauce:['meatSauce','meat_sauce','meat and sauce','meat&sauce','taste','flavor'],
+    skin:['skin','crackling'],
+    moisture:['moisture','juiciness'],
+    appearance:['appearance','visual','presentation'],
+    tenderness:['tenderness','texture']
+  };
+  const pickInt = (scores, names) => {
+    if (!scores || typeof scores!=='object') return 0;
+    for (const want of names) {
+      if (scores[want] != null) return toInt(scores[want]);
+      const tgt = want.toLowerCase().replace(/[ _&]/g,'');
+      for (const k in scores) {
+        const kk = k.toLowerCase().replace(/[ _&]/g,'');
+        if (kk === tgt) return toInt(scores[k]);
+      }
+    }
+    return 0;
+  };
+
+  function buildGroupedReportCSV(){
+    const onsite = getArr('onsiteScores');
+    const blind  = getArr('blindScores');
+    const sauce  = getArr('sauceScores');
+    const teamsA = getArr('teams');
+    const judgesA= getArr('judges');
+    const divMap = getMap('landingTeamDivisions');
+    const emailM = getMap('teamEmails');
+
+    const teamSet = new Set();
+    teamsA.forEach(t=>{ const n=norm(t?.team||t?.name); if(n) teamSet.add(n); });
+    Object.keys(divMap||{}).forEach(n=>{ n=norm(n); if(n) teamSet.add(n); });
+    Object.keys(emailM||{}).forEach(n=>{ n=norm(n); if(n) teamSet.add(n); });
+    onsite.forEach(r=>{ const n=norm(r?.team||r?.teamName||r?.name); if(n) teamSet.add(n); });
+    blind .forEach(r=>{ const n=norm(r?.team); if(n) teamSet.add(n); });
+    sauce .forEach(r=>{ const n=norm(r?.team); if(n) teamSet.add(n); });
+
+    const teams = Array.from(teamSet).sort((a,b)=>a.localeCompare(b));
+
+    let judges = judgesA.map(j=>norm(j?.name)).filter(Boolean);
+    if (!judges.length) {
+      const s=new Set();
+      onsite.forEach(r=>{ if (r?.judge) s.add(norm(r.judge)); });
+      blind .forEach(r=>{ if (r?.judge) s.add(norm(r.judge)); });
+      sauce .forEach(r=>{ if (r?.judge) s.add(norm(r.judge)); });
+      judges = Array.from(s);
+    }
+    judges.sort((a,b)=>a.localeCompare(b));
+
+    const onsiteTJ = {}, blindTJ = {}, sauceTJ = {}, teamTotal = {};
+    const ensureO  = (t,j)=>{ (onsiteTJ[t] ||= {}); (onsiteTJ[t][j] ||= {ms:0,sk:0,mo:0,ap:0,te:0,total:0}); };
+    const ensureTJ = (obj,t,j)=>{ (obj[t] ||= {}); (obj[t][j] ||= 0); };
+
+    onsite.forEach(r=>{
+      const t = norm(r?.team||r?.teamName||r?.name);
+      const j = norm(r?.judge);
+      if (!t||!j) return;
+      const sc=r?.scores||{};
+      const ms=pickInt(sc,CAT.meatSauce), sk=pickInt(sc,CAT.skin), mo=pickInt(sc,CAT.moisture),
+            ap=pickInt(sc,CAT.appearance), te=pickInt(sc,CAT.tenderness), add=ms+sk+mo+ap+te;
+      ensureO(t,j);
+      onsiteTJ[t][j].ms+=ms; onsiteTJ[t][j].sk+=sk; onsiteTJ[t][j].mo+=mo; onsiteTJ[t][j].ap+=ap; onsiteTJ[t][j].te+=te; onsiteTJ[t][j].total+=add;
+      teamTotal[t]=(teamTotal[t]||0)+add;
+    });
+    blind.forEach(r=>{
+      const t=norm(r?.team), j=norm(r?.judge); if(!t||!j) return;
+      ensureTJ(blindTJ,t,j); blindTJ[t][j]+=toInt(r?.score); teamTotal[t]=(teamTotal[t]||0)+toInt(r?.score);
+    });
+    sauce.forEach(r=>{
+      const t=norm(r?.team), j=norm(r?.judge); if(!t||!j) return;
+      ensureTJ(sauceTJ,t,j); sauceTJ[t][j]+=toInt(r?.score); teamTotal[t]=(teamTotal[t]||0)+toInt(r?.score);
+    });
+
+    const rows = [];
+    for (const team of teams) {
+      const division = divMap[team] || ''; const email = emailM[team] || ''; const ttot = teamTotal[team] || 0;
+      rows.push([`Team: ${team}`, `Division: ${division}`, `Email: ${email}`]);
+      rows.push(['Judge','Meat & Sauce','Skin','Moisture','Appearance','Tenderness','On-site Total','Blind','Sauce','Judge Total']);
+
+      const jset = new Set();
+      if (onsiteTJ[team]) Object.keys(onsiteTJ[team]).forEach(j=>jset.add(j));
+      if (blindTJ [team]) Object.keys(blindTJ [team]).forEach(j=>jset.add(j));
+      if (sauceTJ [team]) Object.keys(sauceTJ [team]).forEach(j=>jset.add(j));
+      let teamJudges = Array.from(jset);
+      if (!teamJudges.length) teamJudges = judges.length ? judges.slice(0,1) : [''];
+      teamJudges.sort((a,b)=>a.localeCompare(b));
+
+      for (const j of teamJudges){
+        const o = (onsiteTJ[team]?.[j]) || {ms:0,sk:0,mo:0,ap:0,te:0,total:0};
+        const b = (blindTJ [team]?.[j]) || 0;
+        const s = (sauceTJ [team]?.[j]) || 0;
+        rows.push([ j, o.ms, o.sk, o.mo, o.ap, o.te, o.total, b, s, (o.total+b+s) ]);
+      }
+      rows.push(['Team Total','','','','','','','','', ttot]);
+      rows.push(['']);
+    }
+
+    if (!rows.length) { alert('No data in localStorage to build the report.'); return; }
+
+    const csv = rows.map(r => r.map(csvField).join(',')).join('\\r\\n');
+    const ts=new Date(), pad=n=>String(n).padStart(2,'0');
+    const name=`wh-report_grouped_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.csv`;
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}), a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},100);
+  }
+
+  // Hook existing button (if present)
+  document.addEventListener('DOMContentLoaded', function(){
+    const btn=document.getElementById('wh-build-report-btn');
+    if (btn) btn.addEventListener('click', buildGroupedReportCSV);
+  });
+})();
+</script>
+<script id="wh-report-js" src="wh-report.js"></script>
+<div id="wh-build-report2-container" style="width:100%;display:flex;justify-content:center;margin:8px 0 32px;"></div><div id="wh-report-hint" style="text-align:center;margin:6px 0 24px;font-size:0.9rem;opacity:0.85; display:none;">
+  Tip: Press <strong>Ctrl + Alt + R</strong> to build the detailed CSV grouped by team &amp; judge.
+</div>
+</body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

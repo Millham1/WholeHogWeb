@@ -1,0 +1,12 @@
+*.bak*
+*.damaged_*
+*.tmp
+*.log
+.vscode/
+.idea/
+
+whole hog token.txt
+
+
+whole hog token.txt
+

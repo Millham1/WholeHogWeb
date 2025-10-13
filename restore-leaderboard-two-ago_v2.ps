@@ -1,0 +1,47 @@
+param(
+  [Parameter(Mandatory=$true)]
+  [string]$Path
+)
+
+if (-not (Test-Path -Path $Path)) {
+  Write-Error "File not found: $Path"
+  exit 1
+}
+
+# Resolve paths safely
+$resolved = Resolve-Path -Path $Path
+$dir  = Split-Path -Path $resolved -Parent
+$base = Split-Path -Path $resolved -Leaf
+
+# Gather likely backups in the same directory
+$files = @()
+$files += Get-ChildItem -Path $dir -File -Filter "$($base).bak*"
+$files += Get-ChildItem -Path $dir -File -Filter "*.bak" | Where-Object { $_.Name -match 'leaderboard' }
+$files += Get-ChildItem -Path $dir -File -Filter "leaderboard*.html*" | Where-Object { $_.FullName -ne $resolved.Path }
+
+# De-dup
+$files = $files | Sort-Object FullName -Unique
+
+if (-not $files -or $files.Count -eq 0) {
+  Write-Host "No backups of leaderboard found in: $dir" -ForegroundColor Yellow
+  Write-Host "Try the Console-only rollback below to remove the Division Leaders card/logic for this session."
+  exit 1
+}
+
+# Sort by modified time (newest first) and pick the second most recent if available
+$candidates = $files | Sort-Object LastWriteTime -Descending
+$choice = if ($candidates.Count -ge 2) { $candidates[1] } else { $candidates[0] }
+
+Write-Host "Backup candidates (newest first):" -ForegroundColor Cyan
+$candidates | Select-Object Name, LastWriteTime | Format-Table
+
+# Backup current file so you can undo
+$pre = "$($resolved.Path).pre-restore.bak"
+Copy-Item -Path $resolved.Path -Destination $pre -Force
+
+# Restore
+Copy-Item -Path $choice.FullName -Destination $resolved.Path -Force
+
+Write-Host ""
+Write-Host "✅ Restored '$base' from '$($choice.Name)'." -ForegroundColor Green
+Write-Host "A backup of the current file was saved as '$pre'."

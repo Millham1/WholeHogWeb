@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog Competition 2025</title>
+  <link rel="stylesheet" href="styles.css"/>
+
+<!-- WH HARD HEADER START -->
+<style id="wh-hard-header">
+:root { --wh-header-h: 2.25in; }
+header, .header, .app-header, .site-header, #header {
+  min-height: var(--wh-header-h) !important;
+  height: var(--wh-header-h) !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+header h1, .header h1, .app-header h1, .site-header h1, #header h1 {
+  margin: 0 !important;
+  line-height: 1.1 !important;
+}
+/* Left logo (common IDs/classes or first image) */
+header img#logoLeft,
+header .left-img,
+header .brand-left img,
+#header img#logoLeft,
+#header .left-img,
+#header .brand-left img,
+header img:first-of-type {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: calc(100% - 20px) !important;  /* fit inside header */
+  width: auto !important;
+}
+/* Right logo (common classes or last image) */
+header img.right-img,
+header .brand-right img,
+#header img.right-img,
+#header .brand-right img,
+header img:last-of-type {
+  position: absolute !important;
+  right: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: calc(100% - 20px) !important;
+  width: auto !important;
+}
+</style>
+<!-- WH HARD HEADER END -->
+
+
+
+
+
+
+<style id="wh-nav-style">
+    #wholehog-nav{
+      width:100%; margin:12px auto;
+      display:flex; justify-content:center; align-items:center;
+      gap:12px; flex-wrap:wrap; text-align:center;
+    }
+    #wholehog-nav a{ display:inline-block; white-space:nowrap; width:auto; float:none!important; }
+  </style>
+</head>
+<body>
+  <header class="header" style="height:2.25in; min-height:2.25in; position:relative; display:flex; align-items:center; justify-content:center;"><img id="logoLeft" src="Legion whole hog logo.png" alt="Logo" />
+  
+  <h1 style="margin:0; text-align:center;">Whole Hog Competition 2025</h1>
+  
+<img class="right-img" src="AL Medallion.png" alt="Logo" /></header>
+<div id="wholehog-nav">
+  <a class="btn" href="./onsite.html">Go to On-Site</a>
+  <a class="btn" href="./blind.html">Go to Blind Taste</a>
+  <a class="btn" href="./leaderboard.html">Go to Leaderboard</a>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="navRow" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:640px;margin:18px auto 10px;align-items:center;justify-items:center;">
+   </div> </div>
+</div>
+
+
+
+<!-- WHOLEHOG LANDING TEAMS UI START -->
+<section id="whTeamsCard" style="margin:18px auto;max-width:1000px;border:1px solid #ddd;border-radius:12px;padding:14px;background:#fff;">
+  <h2 style="margin:0 0 12px 0;">Teams</h2>
+  <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
+    <div style="flex:1 1 280px;">
+      <label for="whTeamName" style="display:block;font-weight:600;margin-bottom:4px;">Team Name</label>
+      <span id="wh-flags-mini" style="display:inline-flex;flex-direction:column;gap:4px;margin-right:8px;">
+  <label style="display:inline-flex;align-items:center;gap:6px;"><input type="checkbox" id="legionFlag"> <span>Legion</span></label>
+  <label style="display:inline-flex;align-items:center;gap:6px;"><input type="checkbox" id="sonsFlag"> <span>Sons</span></label>
+</span><input id="whTeamName" type="text" style="width:50%;padding:8px 10px;border:1px solid #bbb;border-radius:8px;" placeholder="e.g., Demo Team" />
+    </div>
+    <div style="flex:0 0 200px;">
+      <label for="whSiteNumber" style="display:block;font-weight:600;margin-bottom:4px;">Site #</label>
+      <span id="wh-chip-site-row" style="display:inline-flex;gap:12px;align-items:flex-end;"><span id="wh-chip-wrap" style="display:flex;flex-direction:column;min-width:120px;"><label>Chip # <input id="chip" type="text" class="input" placeholder="A12" style="max-width:120px"></label></span><span id="wh-site-wrap" style="display:flex;flex-direction:column;min-width:140px;"><label>Site # <input id="whSiteNumber" type="text" style="width:100%;padding:8px 10px;border:1px solid #bbb;border-radius:8px;" placeholder="e.g., 101" /></label></span></span>
+    </div>
+    <div style="flex:0 0 auto;">
+      <button id="whBtnAddTeam" class="btn-red-black" style="background:#b10020;color:#111;border:2px solid #111;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">Add Team</button>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;">
+    <ul id="whTeamsList" style="list-style:none;padding:0;margin:0;"></ul>
+  </div>
+
+  <p style="margin-top:10px;color:#666;font-size:12px;">Tip: Use Remove to delete a team added in error. (If the team already has scoring entries, removal will be blocked.)</p>
+</section>
+<!-- WHOLEHOG LANDING TEAMS UI END -->
+
+<div id="go-onsite-wrap" style="text-align:center;margin:16px 0 24px;">
+  
+</div>
+<div class="container">
+    
+
+    <div class="card">
+      <h2>Judges</h2>
+<div id="judgesList"></div>
+      <form id="judgeForm" class="flex">
+        <input id="judgeName" class="input" placeholder="Judge name"/>
+        <button class="btn" type="submit">Add Judge</button>
+      </form>
+      
+    </div>
+
+    
+  </div>
+
+  <script src="landing.js"></script>
+ 
+  
+ 
+  <script src="landing-teams.js"></script>
+
+  <script src="migrate-teams.js"></script>
+  <script src="landing-sb.js"></script>
+
+
+
+<!-- WH_SYNC_START -->
+<script>
+(function () {
+  document.addEventListener('DOMContentLoaded', () => {
+    const supa = window.supabase;
+    if (!supa) {
+      console.warn('Supabase client not found. Ensure supabase-config.js is loaded before this script.');
+      return;
+    }
+
+    const els = {
+      team: document.getElementById('team') || document.getElementById('teamName'),
+      teamSel: document.getElementById('teamSel'),
+      chip: document.getElementById('chip'),
+      legion: document.getElementById('legionFlag'),
+      sons: document.getElementById('sonsFlag'),
+      site: document.getElementById('site') || document.getElementById('site_number') || document.getElementById('siteNo') || document.getElementById('siteNum'),
+    };
+
+    async function fetchByChip(chip) {
+      const { data, error } = await supa
+        .from('teams')
+        .select('team_name, chip_number, site_number, is_legion, is_sons')
+        .eq('chip_number', chip)
+        .limit(1);
+      if (error) { console.warn('fetchByChip error:', error); return null; }
+      return (data && data[0]) || null;
+    }
+
+    async function fetchByName(name) {
+      const { data, error } = await supa
+        .from('teams')
+        .select('team_name, chip_number, site_number, is_legion, is_sons')
+        .ilike('team_name', name)
+        .limit(1);
+      if (error) { console.warn('fetchByName error:', error); return null; }
+      return (data && data[0]) || null;
+    }
+
+    function applyTeam(row) {
+      if (!row) return;
+      if (els.team && row.team_name) els.team.value = row.team_name;
+      if (els.chip && row.chip_number) els.chip.value = row.chip_number;
+      if (els.site && (row.site_number ?? '') !== '') els.site.value = row.site_number;
+      if (els.legion) els.legion.checked = !!row.is_legion;
+      if (els.sons) els.sons.checked = !!row.is_sons;
+    }
+
+    async function syncFromChip() {
+      const chip = (els.chip && els.chip.value || '').trim().toUpperCase();
+      if (!chip) return;
+      applyTeam(await fetchByChip(chip));
+    }
+
+    async function syncFromTeamName() {
+      const name = (els.team && els.team.value || '').trim();
+      if (!name) return;
+      applyTeam(await fetchByName(name));
+    }
+
+    // Listeners
+    if (els.chip) els.chip.addEventListener('change', syncFromChip);
+    if (els.team) els.team.addEventListener('change', syncFromTeamName);
+
+    // If you have a dropdown of teams
+    if (els.teamSel) {
+      els.teamSel.addEventListener('change', async () => {
+        const opt = els.teamSel.options[els.teamSel.selectedIndex];
+        const chip = opt ? (opt.getAttribute('data-chip') || '').trim() : '';
+        const name = opt ? opt.textContent.trim() : '';
+        if (els.team && name) els.team.value = name;
+        if (chip) {
+          if (els.chip) els.chip.value = chip;
+          await syncFromChip();
+        } else {
+          await syncFromTeamName();
+        }
+      });
+    }
+
+    // Initial sync if fields were pre-filled by other code
+    (async () => {
+      if (els.chip && els.chip.value) await syncFromChip();
+      else if (els.team && els.team.value) await syncFromTeamName();
+    })();
+  });
+})();
+</script>
+<!-- WH_SYNC_END -->
+
+
+
+<!-- BEGIN EntriesViewer -->
+<style>
+  .entries-card{max-width:1100px;margin:16px auto;padding:16px;border-radius:14px;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.06);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .entries-card h2{margin:0 0 8px 0}
+  .entries-actions{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+  .entries-btn{border:0;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:700}
+  .ghost{background:transparent;border:1px solid #d1d5db;color:#111}
+  .ok{background:#198754;color:#fff}
+  .muted{color:#6b7280;font-size:12px;margin-top:6px}
+  table.entries{width:100%;border-collapse:collapse;margin-top:8px}
+  table.entries th, table.entries td{border:1px solid #e5e7eb;padding:8px;text-align:left}
+  table.entries th{background:#f3f4f6}
+</style>
+<section class="entries-card" id="entries-viewer" aria-labelledby="entries-title">
+  <h2 id="entries-title">Current Entries (from this browser)</h2>
+  <div class="entries-actions">
+    <button type="button" class="entries-btn ghost" id="ev-refresh">Refresh</button>
+    <button type="button" class="entries-btn ok"    id="ev-export">Export CSV</button>
+  </div>
+  <div class="muted">Source key: <code>localStorage.blindTasteEntries</code>. Saved by <code>blind.html</code>.</div>
+  <div id="ev-summary" class="muted" style="margin-top:6px"></div>
+  <div id="ev-table-wrap" style="overflow:auto; max-height:420px; margin-top:8px"></div>
+</section>
+<script>
+(function(){
+  const KEY='blindTasteEntries';
+  const $ = s=>document.querySelector(s);
+  const wrap = $('#ev-table-wrap'), sum = $('#ev-summary');
+  function read(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return []; } }
+  function toCSV(rows){
+    const headers=["timestamp","judge_id","chip_number","score_appearance","score_tenderness","score_flavor","score_total"];
+    const out=[headers.join(",")];
+    rows.forEach(r=>{
+      const line=headers.map(h=>{const v=(r[h]==null)?'':String(r[h]).replace(/"/g,'""'); return `"${v}"`;}).join(",");
+      out.push(line);
+    });
+    return out.join("\\n");
+  }
+  function render(){
+    const rows=read();
+    const byChip=new Map(); const byJudge=new Map();
+    rows.forEach(r=>{
+      const c=String(r.chip_number), j=String(r.judge_id);
+      byChip.set(c,(byChip.get(c)||0)+1);
+      byJudge.set(j,(byJudge.get(j)||0)+1);
+    });
+    sum.textContent = `Entries: ${rows.length} | Unique chips: ${byChip.size} | Unique judges: ${byJudge.size}`;
+    if(!rows.length){ wrap.innerHTML='<div class="muted">No entries yet.</div>'; return; }
+    const thead=`<thead><tr>
+      <th>Timestamp</th><th>Judge</th><th>Chip #</th>
+      <th>Appearance</th><th>Tenderness</th><th>Taste</th><th>Total</th>
+    </tr></thead>`;
+    const tbody = rows.map(r=>`<tr>
+      <td>${r.timestamp||''}</td>
+      <td>${r.judge_id||''}</td>
+      <td>${r.chip_number||''}</td>
+      <td>${r.score_appearance||''}</td>
+      <td>${r.score_tenderness||''}</td>
+      <td>${r.score_flavor||''}</td>
+      <td>${r.score_total||''}</td>
+    </tr>`).join("");
+    wrap.innerHTML = `<table class="entries">${thead}<tbody>${tbody}</tbody></table>`;
+  }
+  function exportCSV(){
+    const csv=toCSV(read());
+    if(!csv){ alert('No data'); return; }
+    const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='blind_entries.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+  document.getElementById('ev-refresh').addEventListener('click',render);
+  document.getElementById('ev-export').addEventListener('click',exportCSV);
+  render();
+})();
+</script>
+<!-- END EntriesViewer -->
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

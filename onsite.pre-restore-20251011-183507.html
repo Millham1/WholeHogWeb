@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog On-Site Scoring</title>
+  <link rel="stylesheet" href="styles.css"/>
+
+  <!-- WH HARD HEADER START -->
+  <style id="wh-hard-header">
+    :root { --wh-header-h: 2.25in; }
+    header, .header, .app-header, .site-header, #header {
+      min-height: var(--wh-header-h) !important;
+      height: var(--wh-header-h) !important;
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    header h1, .header h1, .app-header h1, .site-header h1, #header h1 {
+      margin: 0 !important;
+      line-height: 1.1 !important;
+    }
+    /* Left logo (common IDs/classes or first image) */
+    header img#logoLeft,
+    header .left-img,
+    header .brand-left img,
+    #header img#logoLeft,
+    #header .left-img,
+    #header .brand-left img,
+    header img:first-of-type {
+      position: absolute !important;
+      left: 14px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      height: calc(100% - 20px) !important;  /* fit inside header */
+      width: auto !important;
+    }
+    /* Right logo (common classes or last image) */
+    header img.right-img,
+    header .brand-right img,
+    #header img.right-img,
+    #header .brand-right img,
+    header img:last-of-type {
+      position: absolute !important;
+      right: 14px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      height: calc(100% - 20px) !important;
+      width: auto !important;
+    }
+  </style>
+  <!-- WH HARD HEADER END -->
+
+  <!-- Centered mini-nav (matches landing’s layout) -->
+  <style id="wh-nav-style">
+    #wholehog-nav{
+      width:100%; margin:12px auto;
+      display:flex; justify-content:center; align-items:center;
+      gap:12px; flex-wrap:wrap; text-align:center;
+    }
+    #wholehog-nav a{ display:inline-block; white-space:nowrap; width:auto; float:none!important; }
+  </style>
+</head>
+<body>
+  <header class="header" style="height:2.25in; min-height:2.25in; position:relative; display:flex; align-items:center; justify-content:center;">
+    <img id="logoLeft" src="Legion whole hog logo.png" alt="Logo" />
+    <h1 style="margin:0; text-align:center;">Whole Hog On-Site Scoring</h1>
+    <img class="right-img" src="AL Medallion.png" alt="Logo" />
+  </header>
+<div id="top-go-buttons" class="container" style="display:flex;gap:10px;align-items:center;justify-content:flex-start;margin-top:10px;margin-bottom:0;">
+  <button type="button" class="btn btn-ghost" id="go-landing-top" onclick="location.href='landing.html'">Go to Landing</button>
+  <button type="button" class="btn btn-ghost" id="go-leaderboard-top" onclick="location.href='leaderboard.html'">Go to Leaderboard</button>
+  <button type="button" class="btn btn-ghost" id="go-blind-top" onclick="location.href='blind.html'">Go to Blind Taste</button>
+</div>
+
+
+<div id=""top-go-blind"" class=""container"" style=""display:flex;gap:10px;align-items:center;justify-content:flex-start;margin-top:10px;margin-bottom:0;"">
+  
+        </div>
+      </div>
+    </div>
+
+    <div class="card leader">
+      <h2>Leaderboard</h2>
+      <div id="leaderWrap"></div>
+    </div>
+
+    <div class="card">
+      <button id="exportBtn" class="btn secondary">Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Your existing scripts / Supabase wiring -->
+  <script src="onsite.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="onsite-sync-teams.js"></script>
+</body>
+</html>
+
+
+
+

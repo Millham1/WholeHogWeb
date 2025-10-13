@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Whole Hog — Landing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#f6f6f6; margin:0; }
+    header { position: sticky; top:0; background:#fff; border-bottom:1px solid #eee; padding:12px 16px; font-weight:700; }
+    main { max-width: 960px; margin: 0 auto; padding: 24px; }
+    .btn { display:inline-flex; align-items:center; padding:8px 14px; border:1px solid #ddd; border-radius:12px; text-decoration:none; color:#111; background:#fff; margin-right:8px; }
+    .btn:hover { box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+    h1 { font-size: 22px; margin: 0 0 16px; }
+  </style>
+</head>
+<body>
+  <header>Whole Hog</header>
+  <main>
+    <h1>Landing</h1>
+    <div class="nav">
+      <a class="btn" href="./on-site.html">Go to On-Site</a>
+      <a class="btn" href="./blind-taste.html">Go to Blind Taste</a>
+      <a class="btn" href="./leaderboard.html">Go to Leaderboard</a>
+    </div>
+  <!-- WHOLEHOG: Leaderboard Button -->
+<div id="wholehog-leaderboard-btn" style="margin-top:12px;">
+  <a href="./leaderboard.html" class="btn btn-leaderboard">Go to Leaderboard</a>
+</div>
+<!-- /WHOLEHOG -->
+</main>
+
+    <script type="module" src="./supabaseClient.js"></script>
+    <script type="module" src="./addTeam.js"></script>
+
+    <script type="module" src="./chipSelect.js"></script>
+
+  <label>Chip #:
+  <select id="chip-select" name="chip-select"></select>
+</label>
+
+  <script src="./forceChipNumbersOnly.js"></script>
+
+    <script type="module" src="./saveBlindTaste.js"></script>
+
+  <form id="blind-taste-form" style="border:1px solid #ddd;padding:12px;margin:10px 0;">
+  <label>Judge
+    <select id="judge-select" name="judge-select">
+      <option value="" selected disabled>Choose judge…</option>
+      <option value="J1">Judge 1</option>
+      <option value="J2">Judge 2</option>
+    </select>
+  </label>
+  <label>Chip #
+    <select id="chip-select" name="chip-select">
+      <option value="" selected disabled>Select chip #</option>
+      <!-- your chipSelect.js can populate these; static fallback: -->
+      <option value="101">101</option>
+      <option value="102">102</option>
+    </select>
+  </label>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;">
+    <label>Appearance <input data-score name="appearance" type="number" min="0" step="1"></label>
+    <label>Tenderness <input data-score name="tenderness" type="number" min="0" step="1"></label>
+    <label>Flavor <input data-score name="flavor" type="number" min="0" step="1"></label>
+  </div>
+  <label style="margin-top:8px;display:block;">Total
+    <input id="score-total" name="score_total" type="number" readonly>
+  </label>
+  <button id="save-blind-taste" type="button" style="margin-top:10px;">Save Blind Taste</button>
+</form>
+</body>
+</html>
+
+
+
+
+
+
+

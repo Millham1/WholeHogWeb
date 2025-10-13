@@ -1,0 +1,301 @@
+﻿# PowerShell 5.1-compatible
+$ErrorActionPreference = 'Stop'
+
+# === CONFIG ================================================================
+$WebRoot     = 'C:\Users\millh_y3006x1\Desktop\WholeHogWeb'
+$LandingHtml = Join-Path $WebRoot 'landing.html'
+$IndexHtml   = Join-Path $WebRoot 'index.html'
+
+# Your Supabase project
+$SUPABASE_URL = 'https://wiolulxxfyetvdpnfusq.supabase.co'
+$SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpb2x1bHh4ZnlldHZkcG5mdXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg4NjYsImV4cCI6MjA3NDMxNDg2Nn0.zrZI3_Ex3mfqkjKuWB9k-Gec77P7aqf6OJxKvGyxyTc'
+# ==========================================================================
+
+# --- helpers ---
+function Ensure-File($p){
+  if(-not (Test-Path $p)){ throw "File not found: $p" }
+}
+function Read-Text($p){
+  return [System.IO.File]::ReadAllText($p, [System.Text.Encoding]::UTF8)
+}
+function Write-Text($p, [string]$text){
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($p, $text, $utf8NoBom)
+}
+function Backup-Once($path){
+  $dir = Split-Path $path -Parent
+  $name = Split-Path $path -Leaf
+  $bak = Join-Path $dir ($name + '.bak')
+  if(-not (Test-Path $bak)){ Copy-Item $path $bak }
+}
+
+# Insert $block just before </body>. Replace if our markers already exist.
+function Inject-Or-Replace {
+  param(
+    [string]$FilePath,
+    [string]$MarkerName,
+    [string]$Block
+  )
+  $content = Read-Text $FilePath
+
+  $startMark = "<!-- WHOLEHOG-$MarkerName-START -->"
+  $endMark   = "<!-- WHOLEHOG-$MarkerName-END -->"
+  $payload   = "$startMark`r`n$Block`r`n$endMark"
+
+  # Replace existing block
+  $pattern = [System.Text.RegularExpressions.Regex]::Escape($startMark) + ".*?" + [System.Text.RegularExpressions.Regex]::Escape($endMark)
+  $regex = New-Object System.Text.RegularExpressions.Regex($pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+  if($regex.IsMatch($content)){
+    $new = $regex.Replace($content, [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $payload }, 1)
+    Write-Text $FilePath $new
+    return
+  }
+
+  # Inject before </body> (case-insensitive)
+  $bodyRegex = New-Object System.Text.RegularExpressions.Regex("</body>", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+  if($bodyRegex.IsMatch($content)){
+    $new = $bodyRegex.Replace($content, "`r`n$payload`r`n</body>", 1)
+    Write-Text $FilePath $new
+  } else {
+    # No </body>, append
+    Write-Text $FilePath ($content + "`r`n" + $payload + "`r`n")
+  }
+}
+
+# Insert the Supabase client (once). If already present, skip.
+function Ensure-Supabase-Client {
+  param([string]$FilePath)
+
+  $content = Read-Text $FilePath
+  if($content -match 'cdn.jsdelivr.net/.+@supabase/supabase-js' -or $content -match 'createClient\('){
+    return
+  }
+
+  $supabaseSnippet = @"
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // WHOLEHOG Supabase bootstrap
+  (function () {
+    var url = "$SUPABASE_URL";
+    var key = "$SUPABASE_KEY";
+    if (!window.supabase) {
+      window.supabase = window.supabase || supabase.createClient(url, key);
+    }
+  })();
+</script>
+"@
+
+  Inject-Or-Replace -FilePath $FilePath -MarkerName 'SUPABASE' -Block $supabaseSnippet
+}
+
+# --- landing.html wiring (teams + judges + nav) ---
+$LandingJS = @'
+<script>
+(function () {
+  if (!window.supabase) return; // Supabase not loaded
+  var sb = window.supabase;
+
+  function $(id){ return document.getElementById(id); }
+  function safeVal(el){ return el ? (el.value||"").trim() : ""; }
+  function renderList(host, rows, line){
+    if(!host) return;
+    host.innerHTML = (rows||[]).map(line).join("");
+  }
+
+  // TEAMS
+  async function refreshTeams(){
+    var res = await sb.from("teams").select("id,name,site_number").order("site_number",{ascending:true});
+    if(res.error){ console.warn(res.error); return; }
+    renderList($("#teamsList"), res.data, function(r){
+      return '<div class="row"><b>'+ (r.site_number||"") +'</b> — '+ (r.name||"") +'</div>';
+    });
+  }
+  async function addTeam(){
+    var name = safeVal($("#teamName"));
+    var site = safeVal($("#siteNumber"));
+    if(!name || !site){ alert("Enter Team name and Site #"); return; }
+    var ins = await sb.from("teams").insert({ name: name, site_number: site });
+    if(ins.error){ alert(ins.error.message); return; }
+    if($("#teamName")) $("#teamName").value = "";
+    if($("#siteNumber")) $("#siteNumber").value = "";
+    refreshTeams();
+  }
+
+  // JUDGES
+  async function refreshJudges(){
+    var res = await sb.from("judges").select("id,name,active").order("name");
+    if(res.error){ console.warn(res.error); return; }
+    renderList($("#judgesList"), res.data, function(r){
+      return '<div class="row">'+ (r.name||"") + (r.active ? "" : " (inactive)") +'</div>';
+    });
+  }
+  async function addJudge(){
+    var name = safeVal($("#judgeName"));
+    if(!name){ alert("Enter Judge name"); return; }
+    var ins = await sb.from("judges").insert({ name: name, active: true });
+    if(ins.error){ alert(ins.error.message); return; }
+    if($("#judgeName")) $("#judgeName").value = "";
+    refreshJudges();
+  }
+
+  // Hook up buttons if present
+  if($("#addTeamBtn"))  $("#addTeamBtn").addEventListener("click", addTeam);
+  if($("#addJudgeBtn")) $("#addJudgeBtn").addEventListener("click", addJudge);
+  if($("#goOnsiteBtn")) $("#goOnsiteBtn").addEventListener("click", function(){ location.href = "index.html"; });
+
+  // Initial load
+  refreshTeams();
+  refreshJudges();
+})();
+</script>
+'@
+
+# --- index.html wiring (lists, save entry, leaderboard) ---
+$IndexJS = @'
+<script>
+(function () {
+  if (!window.supabase) return;
+  var sb = window.supabase;
+
+  function $(id){ return document.getElementById(id); }
+  function valNum(id){ var el=$(id); if(!el) return null; var n=Number(el.value); return isFinite(n)?n:null; }
+  function checked(id){ var el=$(id); return !!(el && el.checked); }
+  function selVal(id){ var el=$(id); return el ? el.value : ""; }
+
+  async function loadLists(){
+    var ts = $("#teamSelect"), js = $("#judgeSelect");
+    if(ts){
+      var t = await sb.from("teams").select("id,name,site_number").order("site_number");
+      if(!t.error){
+        ts.innerHTML = '<option value="">Select team…</option>' + (t.data||[]).map(function(r){
+          return '<option value="'+r.id+'">'+ (r.site_number||"") +' — '+ (r.name||"") +'</option>';
+        }).join("");
+      }
+    }
+    if(js){
+      var j = await sb.from("judges").select("id,name").eq("active", true).order("name");
+      if(!j.error){
+        js.innerHTML = '<option value="">Select judge…</option>' + (j.data||[]).map(function(r){
+          return '<option value="'+r.id+'">'+ (r.name||"") +'</option>';
+        }).join("");
+      }
+    }
+  }
+
+  async function saveEntry(){
+    var teamId  = selVal("teamSelect");
+    var judgeId = selVal("judgeSelect");
+    if(!teamId){ alert("Pick a Team"); return; }
+    if(!judgeId){ alert("Pick a Judge"); return; }
+
+    var appearance = valNum("appearance");
+    var color      = valNum("color");
+    var skin       = valNum("skin");
+    var moisture   = valNum("moisture");
+    var meat_sauce = valNum("meatSauce");
+
+    if([appearance,color,skin,moisture,meat_sauce].some(function(v){return v===null;})){
+      alert("Choose all scores."); return;
+    }
+
+    var suitable = !!$("#suitable") && $("#suitable").checked;
+
+    var payload = {
+      judging_type: "onsite",
+      team_id:  teamId,
+      judge_id: judgeId,
+      suitable_for_public: suitable,
+      appearance: appearance,
+      color: color,
+      skin: skin,
+      moisture: moisture,
+      meat_sauce: meat_sauce,
+      site_clean:   checked("cln"),
+      knives:       checked("knv"),
+      sauce:        checked("sau"),
+      drinks:       checked("drk"),
+      thermometers: checked("thr")
+    };
+
+    var up = await sb.from("entries").upsert(payload, { onConflict: "team_id,judge_id,judging_type" });
+    if(up.error){ alert(up.error.message); return; }
+
+    await refreshLeaderboard();
+  }
+
+  async function refreshLeaderboard(){
+    var host = $("#leaderboardBody") || $("#leaderboard");
+    if(!host) return;
+
+    var rows = [];
+    var v = await sb.from("leaderboard_onsite_avg").select("*").order("rank",{ascending:true});
+    if(!v.error && v.data){ rows = v.data; }
+    else {
+      // Fallback: compute client-side if the view is missing
+      var eRes = await sb.from("entries")
+        .select("team_id,total,meat_sauce,skin,moisture,teams(name,site_number)")
+        .eq("judging_type","onsite");
+      if(eRes.error){ console.warn(eRes.error); return; }
+      var map = {};
+      (eRes.data||[]).forEach(function(r){
+        var k = r.team_id || "null";
+        if(!map[k]) map[k] = { team_id:k, team_name:(r.teams&&r.teams.name)||"", site_number:(r.teams&&r.teams.site_number)||"", c:0,sum:0, sum_meat:0, sum_skin:0, sum_moist:0 };
+        var a = map[k]; a.c++; a.sum += (r.total||0); a.sum_meat += (r.meat_sauce||0); a.sum_skin += (r.skin||0); a.sum_moist += (r.moisture||0);
+      });
+      rows = Object.keys(map).map(function(k){
+        var a = map[k];
+        return {
+          team_id: k,
+          team_name: a.team_name,
+          site_number: a.site_number,
+          num_scores: a.c,
+          avg_total:   a.c ? (a.sum/a.c) : 0,
+          tb_meat_sauce: a.c ? (a.sum_meat/a.c) : 0,
+          tb_skin:       a.c ? (a.sum_skin/a.c) : 0,
+          tb_moisture:   a.c ? (a.sum_moist/a.c) : 0
+        };
+      }).sort(function(A,B){
+        return (B.avg_total - A.avg_total) ||
+               (B.tb_meat_sauce - A.tb_meat_sauce) ||
+               (B.tb_skin - A.tb_skin) ||
+               (B.tb_moisture - A.tb_moisture);
+      }).map(function(r,i){ r.rank = i+1; return r; });
+    }
+
+    host.innerHTML = rows.map(function(r){
+      return '<tr>' +
+        '<td>' + (r.rank||"") + '</td>' +
+        '<td>' + (r.site_number||"") + '</td>' +
+        '<td>' + (r.team_name||"") + '</td>' +
+        '<td>' + Number(r.avg_total||0).toFixed(2) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  if(document.getElementById("saveEntryBtn")){
+    document.getElementById("saveEntryBtn").addEventListener("click", saveEntry);
+  }
+
+  loadLists().then(refreshLeaderboard);
+})();
+</script>
+'@
+
+# --- Do the work ---
+if(-not (Test-Path $WebRoot)){ throw "Web root not found: $WebRoot" }
+
+# landing.html
+Ensure-File $LandingHtml
+Backup-Once  $LandingHtml
+Ensure-Supabase-Client $LandingHtml
+Inject-Or-Replace -FilePath $LandingHtml -MarkerName 'LANDING-WIRE' -Block $LandingJS
+
+# index.html
+Ensure-File $IndexHtml
+Backup-Once  $IndexHtml
+Ensure-Supabase-Client $IndexHtml
+Inject-Or-Replace -FilePath $IndexHtml -MarkerName 'ONSITE-WIRE' -Block $IndexJS
+
+Write-Host "`nDone." -ForegroundColor Green
+Write-Host "Updated files:" -ForegroundColor Yellow
+Get-Item $LandingHtml, $IndexHtml | Select-Object FullName, Length, LastWriteTime | Format-Table -AutoSize

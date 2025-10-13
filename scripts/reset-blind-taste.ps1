@@ -1,0 +1,271 @@
+param(
+  [string]$Root = ".",
+  [string]$HtmlFile = "blind-taste.html",
+  [string]$SupabaseUrl = "https://YOUR-PROJECT.supabase.co",
+  [string]$SupabaseAnonKey = "YOUR-ANON-KEY"
+)
+
+$ErrorActionPreference = "Stop"
+$Root     = Resolve-Path $Root
+$htmlPath = Join-Path $Root $HtmlFile
+
+if (-not (Test-Path $Root)) { Write-Error "Root not found: $Root"; exit 1 }
+
+# 1) Backup existing page (if present)
+if (Test-Path $htmlPath) {
+  $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+  $bak   = Join-Path $Root ("blind-taste.backup-" + $stamp + ".html")
+  Copy-Item $htmlPath $bak -Force
+  Write-Host "Backup created:" $bak
+}
+
+# 2) Known-good HTML with inline JS (Supabase REST, no CDN).
+#    Use placeholders we replace after.
+$page = @'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Blind Taste</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    form { display: grid; gap: 12px; max-width: 560px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: grid; gap: 6px; }
+    input, select, button { padding: 8px; font-size: 16px; }
+    button { cursor: pointer; }
+    .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .score-selected { background: yellow !important; color: black !important; }
+    label.score-selected { border-radius: 4px; padding: 2px 4px; }
+    .note { font-size: 13px; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Blind Taste</h1>
+
+  <form id="blind-taste-form">
+    <div class="row">
+      <label>Judge
+        <select id="judge-select" name="judge" required>
+          <option value="" selected disabled>Select judge…</option>
+          <option value="J1">Judge 1</option>
+          <option value="J2">Judge 2</option>
+          <option value="J3">Judge 3</option>
+        </select>
+      </label>
+
+      <label>Chip #
+        <select id="chip-select" name="chip" required>
+          <option value="" selected disabled>Loading chips…</option>
+        </select>
+        <div class="note">Numbers only; duplicates (same Judge + Chip) are blocked.</div>
+      </label>
+    </div>
+
+    <div class="score-grid">
+      <label>Appearance
+        <input class="score-field" data-score name="appearance" type="number" min="0" step="1" placeholder="0-10">
+      </label>
+      <label>Tenderness
+        <input class="score-field" data-score name="tenderness" type="number" min="0" step="1" placeholder="0-10">
+      </label>
+      <label>Flavor
+        <input class="score-field" data-score name="flavor" type="number" min="0" step="1" placeholder="0-10">
+      </label>
+    </div>
+
+    <label>Total
+      <input id="score-total" name="score_total" type="number" readonly>
+    </label>
+
+    <button id="save-blind-taste" type="button">Save Blind Taste</button>
+  </form>
+
+  <script>
+  (function(){
+    // ====== CONFIG (filled by script) ======
+    var SUPABASE_URL = "__SUPABASE_URL__";
+    var SUPABASE_KEY = "__SUPABASE_KEY__";
+    var REST = SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1";
+
+    // ====== HELPERS ======
+    function $(sel){ return document.querySelector(sel); }
+    function $all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+    function firstSel(arr){ for (var i=0;i<arr.length;i++){ var el=$(arr[i]); if (el) return el; } return null; }
+
+    function setHighlight(el,on){
+      if (!el) return;
+      if (el.tagName === "INPUT" && el.type === "radio"){
+        var lbl = el.closest("label"); if (lbl) { lbl.classList.toggle("score-selected", !!on); return; }
+      }
+      el.classList.toggle("score-selected", !!on);
+    }
+
+    // Highlight selected score in each category
+    function wireHighlighting(){
+      // number inputs
+      $all("input[data-score], input.score-field").forEach(function(inp){
+        var upd = function(){
+          var v = (inp.value==null ? "" : String(inp.value).trim());
+          setHighlight(inp, v !== "" && !Number.isNaN(Number(v)));
+        };
+        inp.addEventListener("input", upd, {passive:true});
+        inp.addEventListener("change", upd, {passive:true});
+        upd();
+      });
+      // selects (if you use dropdowns for scores in future)
+      $all("select[data-score], select.score-field").forEach(function(sel){
+        var upd = function(){
+          var v = (sel.value==null ? "" : String(sel.value).trim());
+          setHighlight(sel, v !== "" && !Number.isNaN(Number(v)));
+        };
+        sel.addEventListener("change", upd, {passive:true});
+        sel.addEventListener("input", upd, {passive:true});
+        upd();
+      });
+      // radios/buttons supported too if added later
+    }
+
+    function computeTotal(){
+      var total = 0;
+      $all("input[data-score], input.score-field, select[data-score], select.score-field").forEach(function(c){
+        var v = (c.value==null ? "" : String(c.value).trim());
+        var n = Number(v);
+        if (!Number.isNaN(n)) total += n;
+      });
+      var totalEl = $("#score-total");
+      if (totalEl) totalEl.value = String(total);
+      return total;
+    }
+
+    // ====== REST to Supabase ======
+    function sHeaders(extra){
+      var h = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
+      if (extra) { for (var k in extra) h[k]=extra[k]; }
+      return h;
+    }
+
+    async function loadChips(){
+      var sel = $("#chip-select");
+      if (!sel) return;
+      // fetch chip numbers from teams table
+      try {
+        var url = REST + "/teams?select=chip_number&order=chip_number.asc";
+        var res = await fetch(url, { method:"GET", headers: sHeaders({ "Accept": "application/json" }) });
+        var rows = res.ok ? await res.json() : [];
+        sel.innerHTML = "";
+        var ph = document.createElement("option");
+        ph.value = ""; ph.textContent = "Select chip #"; ph.disabled = true; ph.selected = true;
+        sel.appendChild(ph);
+        rows.forEach(function(r){
+          if (r && r.chip_number != null){
+            var n = String(r.chip_number);
+            var o = document.createElement("option");
+            o.value = n; o.textContent = n; // number only
+            sel.appendChild(o);
+          }
+        });
+      } catch (e) {
+        console.error("loadChips error", e);
+        // fallback (static)
+        sel.innerHTML = '<option value="" disabled selected>Select chip #</option><option>100</option><option>101</option>';
+      }
+    }
+
+    async function duplicateExists(judgeId, chipNum){
+      var url = REST + "/blind_taste?select=id&judge_id=eq." + encodeURIComponent(judgeId) + "&chip_number=eq." + encodeURIComponent(chipNum) + "&limit=1";
+      var res = await fetch(url, { method:"GET", headers: sHeaders({ "Accept": "application/json" }) });
+      if (!res.ok){ console.error("dup http", res.status); alert("Warning: could not verify duplicates."); return true; }
+      var rows = await res.json();
+      return Array.isArray(rows) && rows.length > 0;
+    }
+
+    async function insertRow(row){
+      var res = await fetch(REST + "/blind_taste", {
+        method: "POST",
+        headers: sHeaders({ "Content-Type": "application/json", "Prefer": "return=representation" }),
+        body: JSON.stringify(row)
+      });
+      if (!res.ok){
+        var t = await res.text().catch(function(){ return ""; });
+        return { error: { message: t || ("HTTP " + res.status) } };
+      }
+      var data = await res.json();
+      return { data: Array.isArray(data) ? data[0] : data };
+    }
+
+    function clearForm(){
+      var form = $("#blind-taste-form");
+      if (form && form.reset) form.reset();
+      // remove highlights
+      $all(".score-selected").forEach(function(el){ el.classList.remove("score-selected"); });
+      computeTotal();
+    }
+
+    async function onSave(){
+      alert("Saving…"); // proves click handler is wired
+
+      var judgeId = ($("#judge-select")?.value || "").trim();
+      var chipRaw = ($("#chip-select")?.value || "").trim();
+      var chipNum = Number(chipRaw);
+
+      if (!judgeId){ alert("Please select a Judge."); return; }
+      if (!chipRaw || Number.isNaN(chipNum) || chipNum <= 0){ alert("Please select a valid Chip #."); return; }
+
+      var total = computeTotal();
+      var row = { judge_id: judgeId, chip_number: chipNum, score_total: total };
+
+      // map per-name scores
+      var app = Number(($("#blind-taste-form [name='appearance']")?.value || "").trim());
+      var ten = Number(($("#blind-taste-form [name='tenderness']")?.value || "").trim());
+      var fla = Number(($("#blind-taste-form [name='flavor']")?.value || "").trim());
+      if (!Number.isNaN(app)) row.score_appearance = app;
+      if (!Number.isNaN(ten)) row.score_tenderness = ten;
+      if (!Number.isNaN(fla)) row.score_flavor = fla;
+
+      if (await duplicateExists(judgeId, chipNum)){
+        alert("This Judge + Chip # has already been saved.");
+        return;
+      }
+
+      var btn = $("#save-blind-taste"); if (btn) btn.disabled = true;
+      var result = await insertRow(row);
+      if (btn) btn.disabled = false;
+
+      if (result.error){
+        console.error("insert error", result.error);
+        alert(result.error.message || "Save failed.");
+        return;
+      }
+
+      alert("Saved! Chip #" + result.data.chip_number + ", Judge " + result.data.judge_id + ".");
+      clearForm();
+    }
+
+    function wire(){
+      wireHighlighting();
+      computeTotal();
+      loadChips(); // populate chips from teams
+      var btn = $("#save-blind-taste");
+      if (btn){ btn.addEventListener("click", function(e){ e.preventDefault(); onSave(); }); }
+      else {
+        var form = $("#blind-taste-form");
+        if (form){ form.addEventListener("submit", function(e){ e.preventDefault(); onSave(); }); }
+      }
+    }
+    document.addEventListener("DOMContentLoaded", wire);
+  })();
+  </script>
+</body>
+</html>
+'@
+
+# 3) Fill in Supabase URL/key placeholders
+$page = $page.Replace('__SUPABASE_URL__', $SupabaseUrl).Replace('__SUPABASE_KEY__', $SupabaseAnonKey)
+
+# 4) Write the new page
+$page | Set-Content -Path $htmlPath -Encoding UTF8
+
+Write-Host "Rebuilt:" $htmlPath
+Write-Host "Open via local server, e.g.: npx http-server . -p 8080 -c-1 -o /$HtmlFile"

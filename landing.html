@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog Competition 2025 — Landing</title>
+  <link rel="stylesheet" href="styles.css"/>
+
+  <!-- Hard header (unchanged visuals) -->
+  <style>
+    :root { --wh-header-h: 2.25in; --line:#dcdcdc; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; }
+    header { height:var(--wh-header-h); min-height:var(--wh-header-h); position:relative; display:flex; align-items:center; justify-content:center; }
+    header h1 { margin:0; line-height:1.1; text-align:center; }
+    header img:first-of-type { position:absolute; left:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
+    header img:last-of-type  { position:absolute; right:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
+
+    #wholehog-nav { width:100%; margin:12px auto; display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; text-align:center; }
+    #wholehog-nav a { display:inline-block; white-space:nowrap; padding:8px 12px; border:1px solid #111; border-radius:10px; text-decoration:none; color:#111; background:#f5f5f5; }
+
+    .container { max-width:1000px; margin:18px auto; padding:0 14px; }
+    .card { border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff; }
+    .card h2 { margin:0 0 10px 0; }
+    .row { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; }
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field label { font-weight:600; }
+    .input, select { padding:8px 10px; border:1px solid #bbb; border-radius:8px; }
+    .btn { padding:10px 16px; border-radius:10px; border:1px solid #111; background:#f5f5f5; cursor:pointer; }
+    .btn-red-black { background:#b10020; color:#111; border:2px solid #111; font-weight:700; }
+    ul.clean { list-style:none; padding:0; margin:0; }
+    .muted { color:#666; font-size:12px; }
+  </style>
+<style id="wh-nav-landing-override">
+  #wholehog-nav{
+    max-width: 820px;
+    margin: 12px auto;
+    display:flex; justify-content:center; align-items:center;
+    gap:12px; flex-wrap:wrap; text-align:center;
+  }
+  #wholehog-nav a, #top-go-buttons a{
+    display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;
+    padding:10px 14px; border-radius:10px;
+    background:#e53935 !important; color:#000 !important;
+    font-weight:800 !important; border:2px solid #000 !important;
+    text-decoration:none; min-width:180px;
+  }
+  #wholehog-nav a:hover, #top-go-buttons a:hover{ filter:brightness(0.92); }
+</style>
+</head>
+<body>
+  <header class="header">
+    <img src="Legion whole hog logo.png" alt="Logo" onerror="this.style.display='none'"/>
+    <h1>Whole Hog Competition 2025</h1>
+    <img src="AL Medallion.png" alt="Logo" onerror="this.style.display='none'"/>
+  </header>
+
+  <nav id="wholehog-nav"><a href="./onsite.html">Go to On-Site</a>
+    <a href="./blind.html">Go to Blind Taste</a>
+    <a href="./leaderboard.html">Go to Leaderboard</a>
+  <a href="./sauce.html">Go to Sauce Tasting</a>
+  <a href="./reports.html">Go to Reports</a>
+</nav>
+
+  <div class="container">
+    <!-- Teams -->
+    <section class="card" id="whTeamsCard">
+      <h2>Teams</h2>
+
+      <div class="row">
+        <div class="field" style="flex:1 1 320px; min-width:260px;">
+          <label for="whTeamName">Team Name</label>
+          <input id="whTeamName" class="input" type="text" placeholder="e.g., Demo Team"/>
+<!-- Team Email (optional) -->
+<div style="margin-top:8px;">
+  <label for="whTeamEmail" style="display:block;font-weight:600;margin-bottom:4px;">Email (optional)</label>
+  <input id="whTeamEmail" type="email" inputmode="email"
+         style="width:50%;padding:8px;border:1px solid #bbb;border-radius:8px;"
+         placeholder="team@example.com" />
+  <div id="whTeamEmailErr" style="display:none;color:#b91c1c;font-size:12px;margin-top:4px;">
+    Please enter a valid email (e.g., name@host.com) or leave blank.
+  </div>
+</div>
+        </div>
+
+        <div class="field" style="flex:0 0 140px;">
+          <label for="chip">Chip #</label>
+          <input id="chip" class="input" type="text" placeholder="e.g., A12"/>
+        </div>
+
+        <div class="field" style="flex:0 0 140px;">
+          <label for="whSiteNumber">Site #</label>
+          <input id="whSiteNumber" class="input" type="text" placeholder="e.g., 101"/>
+        </div>
+
+        <div class="field" style="flex:0 0 160px;">
+          <label>Affiliation</label>
+          <label style="display:flex; gap:8px; align-items:center;">
+            <input type="checkbox" id="legionFlag"/> <span>Legion</span>
+          </label>
+          <label style="display:flex; gap:8px; align-items:center;">
+            <input type="checkbox" id="sonsFlag"/> <span>Sons</span>
+          </label>
+        </div>
+
+        <div style="flex:0 0 auto;">
+          <button id="whBtnAddTeam" class="btn btn-red-black" type="button">Add Team</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <ul id="whTeamsList" class="clean"></ul>
+      </div>
+
+      <p class="muted" style="margin-top:10px;">Tip: Adding a team updates this list immediately. “Chip Entered” shows <b>Yes</b> if a chip was provided.</p>
+    </section>
+
+    <!-- Judges -->
+    <section class="card" id="whJudgesCard" style="margin-top:18px;">
+      <h2>Judges</h2>
+
+      <div class="row">
+        <form id="judgeForm" class="row" style="gap:10px;">
+          <div class="field" style="flex:1 1 320px; min-width:260px;">
+            <label for="judgeName">Judge Name</label>
+            <input id="judgeName" class="input" type="text" placeholder="e.g., Jamie Smith"/>
+          </div>
+          <div style="flex:0 0 auto; align-self:flex-end;">
+            <button class="btn" type="submit">Add Judge</button>
+          </div>
+        </form>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div id="judgesList"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Local-only logic: teams & judges (no network) -->
+  <script>
+    (function(){
+      // Keys
+      const K = {
+        teams: 'wh_Teams',
+        judges: 'wh_Judges',
+        selTeam: 'selectedTeamName',
+        selJudge: 'selectedJudgeName',
+        chipMap: 'wh_chipByTeam',
+        blindA: 'blindEntries',
+        blindB: 'blindScores',
+        onsite: 'onsiteScores'
+      };
+
+      // Helpers
+      const $ = (s,r)=> (r||document).querySelector(s);
+      function getList(k){ try { return JSON.parse(localStorage.getItem(k)||'[]'); } catch { return []; } }
+      function setList(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+      function getJSON(k, fb){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } }
+      function setJSON(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+      function hasChip(team){
+        if (!team) return false;
+        const map = getJSON(K.chipMap, null);
+        if (map && typeof map==='object' && String(map[team]||'').trim()!=='') return true;
+        for (const key of [K.blindA, K.blindB, K.onsite]){
+          const arr = getList(key);
+          if (arr.some(r => ((r.team||r.teamName)||'')===team && String((r.chip||r.chip_number||'')).trim()!=='')) return true;
+        }
+        return false;
+      }
+
+      function renderTeams(){
+        const ul = $('#whTeamsList');
+        if (!ul) return;
+        const teams = getList(K.teams);
+        if (!teams.length){ ul.innerHTML = ''; return; }
+
+        const anySite = teams.some(t => (t.site||'').trim()!=='');
+        const head = `
+          <li style="padding:6px 4px;border-bottom:2px solid #ddd;display:grid;grid-template-columns:160px 1fr ${anySite?'120px':''} 140px;gap:8px;font-weight:700;">
+            <span>Affiliation</span>
+            <span>Team Name</span>
+            ${anySite?'<span>Site #</span>':''}
+            <span>Chip Entered</span>
+          </li>`;
+
+        const rows = teams.map(t=>{
+          const aff  = t.affiliation || '';
+          const name = t.name || '';
+          const site = (t.site||'').toString();
+          const chip = hasChip(name) ? 'Yes' : 'No';
+          return `
+            <li style="padding:6px 4px;border-bottom:1px solid #eee;display:grid;grid-template-columns:160px 1fr ${anySite?'120px':''} 140px;gap:8px;align-items:center;">
+              <span>${aff}</span>
+              <span>${name}</span>
+              ${anySite?`<span>${site}</span>`:''}
+              <span><strong>${chip}</strong></span>
+            </li>`;
+        }).join('');
+
+        ul.innerHTML = head + rows;
+      }
+
+      function renderJudges(){
+        const host = $('#judgesList');
+        if (!host) return;
+        const judges = getList(K.judges);
+        if (!judges.length){ host.innerHTML = ''; return; }
+        host.innerHTML = '<ul class="clean" style="margin:8px 0 0; padding-left:16px; list-style:disc inside;">' +
+          judges.map(j => `<li>${j.name||''}</li>`).join('') + '</ul>';
+      }
+
+      // Add Team
+      function onAddTeam(ev){
+        ev.preventDefault();
+
+        const nameEl = $('#whTeamName');
+        const chipEl = $('#chip');
+        const siteEl = $('#whSiteNumber');
+        const legEl  = $('#legionFlag');
+        const sonEl  = $('#sonsFlag');
+
+        const name = String(nameEl && nameEl.value || '').trim();
+        if (!name){ alert('Enter a team name.'); return; }
+
+        const teams = getList(K.teams);
+        let rec = teams.find(t => (t.name||'').toLowerCase() === name.toLowerCase());
+
+        const aff = (legEl && legEl.checked ? 'Legion' : '') + (sonEl && sonEl.checked ? ((legEl&&legEl.checked)?' & ':'')+'Sons' : '');
+        const site = String(siteEl && siteEl.value || '').trim();
+
+        if (rec){ rec.affiliation = aff; rec.site = site; }
+        else { teams.push({ name, affiliation: aff, site, ts: new Date().toISOString() }); }
+        setList(K.teams, teams);
+        localStorage.setItem(K.selTeam, name);
+
+        // Save chip immediately so "Chip Entered" flips to Yes
+        const chipVal = String(chipEl && chipEl.value || '').trim();
+        if (chipVal){
+          const cmap = getJSON(K.chipMap, {}) || {};
+          cmap[name] = chipVal;
+          setJSON(K.chipMap, cmap);
+        }
+
+        // Clear inputs & checkboxes
+        if (nameEl) nameEl.value = '';
+        if (chipEl) chipEl.value = '';
+        if (siteEl) siteEl.value = '';
+        if (legEl)  legEl.checked = false;
+        if (sonEl)  sonEl.checked = false;
+
+        renderTeams();
+        alert('Team saved locally: ' + name);
+      }
+
+      // Add Judge
+      function onAddJudge(ev){
+        ev.preventDefault();
+        const nameEl = $('#judgeName');
+        const name = String(nameEl && nameEl.value || '').trim();
+        if (!name){ alert('Enter a judge name.'); return; }
+
+        const judges = getList(K.judges);
+        if (!judges.some(j => (j.name||'').toLowerCase() === name.toLowerCase())){
+          judges.push({ name, ts: new Date().toISOString() });
+          setList(K.judges, judges);
+        }
+        localStorage.setItem(K.selJudge, name);
+
+        if (nameEl) nameEl.value = '';
+        renderJudges();
+        alert('Judge saved locally: ' + name);
+      }
+
+      // Init
+      document.addEventListener('DOMContentLoaded', function(){
+        // Wire exact controls on this page
+        const addTeamBtn = document.getElementById('whBtnAddTeam');
+        if (addTeamBtn){
+          // Replace node to drop any previous listeners if this file gets modified later
+          const clone = addTeamBtn.cloneNode(true);
+          addTeamBtn.parentNode.replaceChild(clone, addTeamBtn);
+          clone.addEventListener('click', onAddTeam);
+        }
+
+        const judgeForm = document.getElementById('judgeForm');
+        if (judgeForm){
+          const cloneF = judgeForm.cloneNode(true);
+          judgeForm.parentNode.replaceChild(cloneF, judgeForm);
+          cloneF.addEventListener('submit', onAddJudge);
+        }
+
+        renderTeams();
+        renderJudges();
+      });
+    })();
+  </script>
+<script id="wh-team-email-hook">
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function isValidEmail(s){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  }
+  function safeParseMap(k){
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : {}; } catch(e){ return {}; }
+  }
+  function safeSaveMap(k, obj){
+    try { localStorage.setItem(k, JSON.stringify(obj)); } catch(e){}
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn   = $('whBtnAddTeam');
+    var name  = $('whTeamName');
+    var email = $('whTeamEmail');
+    var err   = $('whTeamEmailErr');
+
+    if (!btn || !name) return;
+
+    // Validate & persist email BEFORE other click handlers run
+    btn.addEventListener('click', function(ev){
+      if (!email) return;
+
+      var teamName = (name.value || '').trim();
+      var mail     = (email.value || '').trim();
+
+      // If user typed an email, validate
+      if (mail.length){
+        if (!isValidEmail(mail)){
+          if (err) err.style.display = 'block';
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          return;
+        }
+        // valid → save mapping
+        var map = safeParseMap('teamEmails');
+        if (teamName) { map[teamName] = mail; }
+        safeSaveMap('teamEmails', map);
+      } else {
+        if (err) err.style.display = 'none';
+      }
+
+      // clear email box after successful add (let existing handler proceed)
+      setTimeout(function(){
+        try { if (email) email.value = ''; if (err) err.style.display = 'none'; } catch(_){}
+      }, 0);
+    }, true); // capture: true → run before other handlers
+  });
+})();
+</script>
+</body></html>
+
+

@@ -1,0 +1,87 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Whole Hog Competition 2025</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="header" style="height:2.25in; line-height:2.25in;; height:2.25in; min-height:2.25in; line-height:2.25in;">
+    <img id="logoLeft" src="Legion whole hog logo.png" alt="Whole Hog" />
+    <h1 class="title">Whole Hog Competition 2025</h1>
+    <img class="right-img" src="AL Medallion.png" alt="American Legion"/>
+  </header>
+<div id="navRow" style="display:flex;gap:16px;justify-content:center;align-items:center;margin:18px 0;">
+  <a id="btnGoOnsite"
+     href="onsite.html"
+     style="background:#b10020;color:#111;border:2px solid #111;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;display:inline-block;">
+    Go to On-Site Scoring
+  </a>
+  <a id="btnGoBlind"
+     href="blind.html"
+     style="background:#b10020;color:#111;border:2px solid #111;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;display:inline-block;">
+    Go to Blind Taste
+  </a>
+</div>
+
+<!-- WHOLEHOG LANDING TEAMS UI START -->
+<section id="whTeamsCard" style="margin:18px auto;max-width:1000px;border:1px solid #ddd;border-radius:12px;padding:14px;background:#fff;">
+  <h2 style="margin:0 0 12px 0;">Teams</h2>
+  <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
+    <div style="flex:1 1 280px;">
+      <label for="whTeamName" style="display:block;font-weight:600;margin-bottom:4px;">Team Name</label>
+      <input id="whTeamName" type="text" style="width:100%;padding:8px 10px;border:1px solid #bbb;border-radius:8px;" placeholder="e.g., Demo Team" />
+    </div>
+    <div style="flex:0 0 200px;">
+      <label for="whSiteNumber" style="display:block;font-weight:600;margin-bottom:4px;">Site #</label>
+      <input id="whSiteNumber" type="text" style="width:100%;padding:8px 10px;border:1px solid #bbb;border-radius:8px;" placeholder="e.g., 101" />
+    </div>
+    <div style="flex:0 0 auto;">
+      <button id="whBtnAddTeam" class="btn-red-black" style="background:#b10020;color:#111;border:2px solid #111;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">Add Team</button>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;">
+    <ul id="whTeamsList" style="list-style:none;padding:0;margin:0;"></ul>
+  </div>
+
+  <p style="margin-top:10px;color:#666;font-size:12px;">Tip: Use Remove to delete a team added in error. (If the team already has scoring entries, removal will be blocked.)</p>
+</section>
+<!-- WHOLEHOG LANDING TEAMS UI END -->
+
+<div id="go-onsite-wrap" style="text-align:center;margin:16px 0 24px;">
+  <a id="btnGoOnsite" href="onsite.html" class="btn-red-black">Go to On-Site Scoring</a>
+</div>
+<div class="container">
+    <div class="card">
+      <h2>Teams</h2>
+      <form id="teamForm" class="flex">
+        <input id="teamName" class="input" placeholder="Team name"/>
+        <input id="siteNumber" class="input" placeholder="Site #"/>
+        <button class="btn" type="submit">Add Team</button>
+      </form>
+      
+    </div>
+
+    <div class="card">
+      <h2>Judges</h2>
+      <form id="judgeForm" class="flex">
+        <input id="judgeName" class="input" placeholder="Judge name"/>
+        <button class="btn" type="submit">Add Judge</button>
+      </form>
+      
+    </div>
+
+    
+  </div>
+
+  <script src="landing.js"></script>
+ 
+  <script src="supabase-config.js"></script>
+ 
+  <script src="landing-teams.js"></script>
+
+  <script src="migrate-teams.js"></script>
+</body>
+</html>

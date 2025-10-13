@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Blind Taste Scoring</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="supabase-config.js"></script>
+  <style>
+    /* Force header to 2.25in and vertically center left/right images */
+    header.header { position: relative; height: 2.25in; min-height: 2.25in; line-height: normal; }
+    header.header img#logoLeft { position:absolute; left:18px; top:50%; transform:translateY(-50%); height:calc(100% - 24px); width:auto; }
+    header.header img.right-img { position:absolute; right:18px; top:50%; transform:translateY(-50%); height:calc(100% - 24px); width:auto; }
+    header.header h1 { margin:0; text-align:center; position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); }
+    /* Minimal card layout if styles.css is sparse */
+    .page-wrap{max-width:1200px;margin:0 auto;padding:12px;}
+    .panel{margin:10px 0;}
+    .grid-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;}
+    .card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:14px;}
+    .row{display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;margin:8px 0;}
+    .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+    .mini-card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:10px;position:relative;min-height:96px;}
+    .mini-head{font-weight:700;margin-bottom:8px;}
+    .range{color:#666;font-weight:400;margin-left:4px;}
+    .picker-btn{width:100%;padding:10px 12px;border:1px solid #bbb;border-radius:10px;background:#f8f8f8;cursor:pointer;font-weight:600;}
+    .options{display:none;margin-top:8px;border-top:1px dashed #ddd;padding-top:8px;}
+    .options.show{display:block;}
+    .options .opt{margin:4px 4px 0 0;padding:6px 8px;border:1px solid #bbb;background:#fff;border-radius:8px;cursor:pointer;}
+    .total-row{display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center;margin-top:12px;}
+    .total-label{font-weight:700;}
+    .total-val{font-weight:800;font-size:1.2rem;}
+    .btn-primary{background:#0b4fff;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;}
+    table.lb{width:100%;border-collapse:collapse;}
+    table.lb th,table.lb td{border-bottom:1px solid #eee;padding:8px 6px;text-align:left;}
+  </style>
+
+<!-- WH HARD HEADER START -->
+<style id="wh-hard-header">
+:root { --wh-header-h: 2.25in; }
+header, .header, .app-header, .site-header, #header {
+  min-height: var(--wh-header-h) !important;
+  height: var(--wh-header-h) !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+header h1, .header h1, .app-header h1, .site-header h1, #header h1 {
+  margin: 0 !important;
+  line-height: 1.1 !important;
+}
+/* Left logo (common IDs/classes or first image) */
+header img#logoLeft,
+header .left-img,
+header .brand-left img,
+#header img#logoLeft,
+#header .left-img,
+#header .brand-left img,
+header img:first-of-type {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: calc(100% - 20px) !important;  /* fit inside header */
+  width: auto !important;
+}
+/* Right logo (common classes or last image) */
+header img.right-img,
+header .brand-right img,
+#header img.right-img,
+#header .brand-right img,
+header img:last-of-type {
+  position: absolute !important;
+  right: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: calc(100% - 20px) !important;
+  width: auto !important;
+}
+</style>
+<!-- WH HARD HEADER END -->
+</head>
+
+  <header class="header" style="height:2.25in; min-height:2.25in; position:relative; display:flex; align-items:center; justify-content:center;"><img id="logoLeft" src="Legion whole hog logo.png" alt="Logo" />
+  
+  <h1 style="margin:0; text-align:center;">Blind Taste Scoring</h1>
+  
+<img class="right-img" src="AL Medallion.png" alt="Logo" /></header>
+
+  <main class="page-wrap">
+    <section class="panel">
+      <div class="grid-two">
+        <div class="card">
+          <h2>Judge & Chip</h2>
+          <div class="row">
+            <label for="judgeSelect">Judge</label>
+            <select id="judgeSelect"><option value="">Loading judges…</option></select>
+          </div>
+          <div class="row">
+            <label for="chipInput">Chip Number</label>
+            <input id="chipInput" type="text" placeholder="e.g., 203"/>
+          </div>
+        </div>
+
+        <div class="card" id="scoringCard">
+          <h2>Scores</h2>
+          <div class="score-grid">
+            <div class="mini-card" id="cardAppearance">
+              <div class="mini-head">Appearance <span class="range">(2-40)</span></div>
+              <button class="picker-btn" data-for="appearance"><span class="sel">Choose</span></button>
+              <div class="options" data-for="appearance"></div>
+            </div>
+
+            <div class="mini-card" id="cardTenderness">
+              <div class="mini-head">Tenderness <span class="range">(2-40)</span></div>
+              <button class="picker-btn" data-for="tenderness"><span class="sel">Choose</span></button>
+              <div class="options" data-for="tenderness"></div>
+            </div>
+
+            <div class="mini-card" id="cardTaste">
+              <div class="mini-head">Taste <span class="range">(4-80)</span></div>
+              <button class="picker-btn" data-for="taste"><span class="sel">Choose</span></button>
+              <div class="options" data-for="taste"></div>
+            </div>
+          </div>
+
+          <div class="total-row">
+            <div class="total-label">Total</div>
+            <div class="total-val" id="totalDisplay">0</div>
+            <button id="saveBtn" class="btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Leaderboard (Blind)</h2>
+      <div id="leaderboard">Loading…</div>
+    </section>
+  </main>
+
+  <script src="blind-sb.js"></script>
+
+  <script src="./bt-save-rest.js" data-url="https://YOUR-PROJECT.supabase.co" data-key="YOUR-ANON-KEY"></script>
+
+  <script src="./bt-load-options.js" data-url="https://YOUR-PROJECT.supabase.co" data-key="YOUR-ANON-KEY"></script>
+
+  <script src="./bt-wire.js" data-url="https://YOUR-PROJECT.supabase.co" data-key="YOUR-ANON-KEY"></script>
+</body>
+</html>
+<script>
+(function(){
+  // ==== YOUR SUPABASE (from your message) ====
+  const SUPABASE_URL = "https://wiolulxxfyetvdpnfusq.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpb2x1bHh4ZnlldHZkcG5mdXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg4NjYsImV4cCI6MjA3NDMxNDg2Nn0.zrZI3_Ex3mfqkjKuWB9k-Gec77P7aqf6OJxKvGyxyTc";
+  const REST = SUPABASE_URL.replace(/\/+$/,'') + "/rest/v1";
+
+  // ---- utilities ----
+  const $ = (q) => document.querySelector(q);
+  const first = (arr) => arr.map((q)=>$(q)).find(Boolean) || null;
+  const headers = (extra={}) => Object.assign({
+    apikey: SUPABASE_KEY,
+    Authorization: "Bearer " + SUPABASE_KEY
+  }, extra);
+
+  const elJudge = () => first(["#judge-select","select[name='judge']","select[name*='judge' i]"]);
+  const elChip  = () => first(["#chip-select","select[name='chip']","select[name*='chip' i]"]);
+
+  // ---- load Chip # from teams.chip_number (numbers only) ----
+  async function loadChips(){
+    const sel = elChip();
+    if (!sel || sel.tagName !== "SELECT") return;
+    try{
+      const res = await fetch(`${REST}/teams?select=chip_number&chip_number=is.not.null&order=chip_number.asc`,
+                              { headers: headers({Accept:"application/json"}) });
+      if (!res.ok) return; // leave existing options
+      const rows = await res.json();
+      const seen = new Set();
+      const frag = document.createDocumentFragment();
+      const ph = document.createElement("option");
+      ph.value=""; ph.textContent="Select chip #"; ph.disabled=true; ph.selected=true; frag.appendChild(ph);
+      rows.forEach(r=>{
+        if (!r || r.chip_number == null) return;
+        const v = String(r.chip_number);
+        if (seen.has(v)) return; seen.add(v);
+        const o = document.createElement("option"); o.value=v; o.textContent=v; frag.appendChild(o);
+      });
+      sel.innerHTML = ""; sel.appendChild(frag);
+    }catch(_){ /* keep whatever is there */ }
+  }
+
+  // ---- optional: load judges from judges(id, display_name) if available ----
+  async function loadJudges(){
+    const sel = elJudge();
+    if (!sel || sel.tagName !== "SELECT") return;
+    try{
+      const res = await fetch(`${REST}/judges?select=id,display_name&order=display_name.asc`,
+                              { headers: headers({Accept:"application/json"}) });
+      if (!res.ok) return;       // optional; keep your existing list
+      const rows = await res.json();
+      if (!Array.isArray(rows) || rows.length===0) return;
+      const frag = document.createDocumentFragment();
+      const ph = document.createElement("option");
+      ph.value=""; ph.textContent="Select judge"; ph.disabled=true; ph.selected=true; frag.appendChild(ph);
+      rows.forEach(r=>{
+        if (!r || r.id==null) return;
+        const id = String(r.id);
+        const label = r.display_name!=null ? String(r.display_name) : id;
+        const o = document.createElement("option"); o.value=id; o.textContent=label; frag.appendChild(o);
+      });
+      sel.innerHTML = ""; sel.appendChild(frag);
+    }catch(_){ /* ignore */ }
+  }
+
+  // ---- duplicate check & insert ----
+  async function duplicateExists(judgeId, chipNum){
+    const url = `${REST}/blind_taste?select=id&judge_id=eq.${encodeURIComponent(judgeId)}&chip_number=eq.${encodeURIComponent(chipNum)}&limit=1`;
+    const res = await fetch(url, { headers: headers({Accept:"application/json"}) });
+    if (!res.ok) return true; // if we can’t verify, fail safe
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length>0;
+  }
+  async function insertRow(row){
+    const res = await fetch(`${REST}/blind_taste`, {
+      method: "POST",
+      headers: headers({"Content-Type":"application/json", Prefer:"return=representation"}),
+      body: JSON.stringify(row)
+    });
+    if (!res.ok){
+      const txt = await res.text().catch(()=> "");
+      return { error: { message: txt || `HTTP ${res.status}` } };
+    }
+    const data = await res.json();
+    return { data: Array.isArray(data) ? data[0] : data };
+  }
+
+  // ---- compute total (uses your existing fields; no UI change) ----
+  function readTotal(){
+    const tEl = first(["#score-total","input[name='score_total']"]);
+    if (tEl){
+      const n = Number(String(tEl.value||"").trim());
+      if (!Number.isNaN(n)) return n;
+    }
+    // fallback sum if no total field
+    let total = 0;
+    document.querySelectorAll("input[data-score],input.score-field,select[data-score],select.score-field")
+      .forEach(c=>{
+        const n = Number(String(c.value||"").trim());
+        if (!Number.isNaN(n)) total += n;
+      });
+    return total;
+  }
+
+  // ---- save handler ----
+  async function onSave(){
+    alert("Saving…"); // proves the click handler fired
+
+    const jSel = elJudge();
+    const cSel = elChip();
+    const judgeId = jSel ? String(jSel.value||"").trim() : "";
+    const chipRaw = cSel ? String(cSel.value||"").trim() : "";
+    const chipNum = Number(chipRaw);
+
+    if (!judgeId){ alert("Please select a Judge."); return; }
+    if (!chipRaw || Number.isNaN(chipNum) || chipNum<=0){ alert("Please select a valid Chip #."); return; }
+
+    const row = { judge_id: judgeId, chip_number: chipNum, score_total: readTotal() };
+    const a = document.querySelector("[name='appearance']"); if (a){ const v=Number(String(a.value||"").trim()); if(!Number.isNaN(v)) row.score_appearance=v; }
+    const t = document.querySelector("[name='tenderness']"); if (t){ const v=Number(String(t.value||"").trim()); if(!Number.isNaN(v)) row.score_tenderness=v; }
+    const f = document.querySelector("[name='flavor']");    if (f){ const v=Number(String(f.value||"").trim()); if(!Number.isNaN(v)) row.score_flavor=v; }
+
+    if (await duplicateExists(judgeId, chipNum)){
+      alert("Error: This Judge + Chip # already exists.");
+      return;
+    }
+
+    const btn = $("#save-blind-taste"); if (btn) btn.disabled = true;
+    const result = await insertRow(row);
+    if (btn) btn.disabled = false;
+
+    if (result.error){
+      alert(result.error.message || "Save failed.");
+      return;
+    }
+    alert(`Saved! Chip #${result.data.chip_number}, Judge ${result.data.judge_id}.`);
+  }
+
+  // ---- wire on load (no layout changes) ----
+  function wire(){
+    loadChips();
+    loadJudges(); // optional
+    const btn = $("#save-blind-taste");
+    if (btn) btn.addEventListener("click", (e)=>{ e.preventDefault(); onSave(); });
+    else {
+      const form = first(["form"]);
+      if (form) form.addEventListener("submit", (e)=>{ e.preventDefault(); onSave(); });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire);
+  else wire();
+})();
+</script>
+
+
+

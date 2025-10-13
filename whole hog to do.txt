@@ -1,0 +1,8 @@
+﻿al category  only 1st
+sal category only 1st
+blind taste
+	100 tp 115  bottom of pan
+blind sauce
+	200 to 215
+
+build a certificate for each category
