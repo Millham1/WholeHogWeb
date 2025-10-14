@@ -154,13 +154,36 @@ $card = @'
       sel.appendChild(opt);
     }
   }
+  function addExtraOptions(selectId, values) {
+    var sel = document.getElementById(selectId);
+    if (!sel) return;
+    var opts = Array.from(sel.options);
+    values.forEach(function(val) {
+      var opt = document.createElement('option');
+      opt.value = val; opt.textContent = val;
+      // Find insertion point to keep sorted
+      var inserted = false;
+      for (var i = 0; i < opts.length; i++) {
+        if (parseInt(opts[i].value) > val) {
+          sel.insertBefore(opt, opts[i]);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) sel.appendChild(opt);
+      opts = Array.from(sel.options);
+    });
+  }
   // Appearance & Color: 2..40 by 2
   fillRange('appearance', 2, 40, 2);
   fillRange('color', 2, 40, 2);
-  // Skin/Moisture/Taste: 4..80 by 4
+  // Skin/Moisture/Taste: 4..80 by 4, plus 70, 74, 78
   fillRange('skin', 4, 80, 4);
+  addExtraOptions('skin', [70, 74, 78]);
   fillRange('moisture', 4, 80, 4);
+  addExtraOptions('moisture', [70, 74, 78]);
   fillRange('taste', 4, 80, 4);
+  addExtraOptions('taste', [70, 74, 78]);
 
   // Defaults roughly mid-range
   ['appearance','color','skin','moisture','taste'].forEach(function(id){

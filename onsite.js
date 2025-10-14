@@ -9,6 +9,10 @@
   var APPEAR = even(2,40,2);
   var COLOR  = even(2,40,2);
   var STEP4  = even(4,80,4);
+  // Add 70, 74, 78 to STEP4 for skin, moisture, meat_sauce
+  STEP4.splice(STEP4.indexOf(72), 0, 70);
+  STEP4.splice(STEP4.indexOf(76), 0, 74);
+  STEP4.splice(STEP4.indexOf(80), 0, 78);
 
   function even(min,max,step){ var a=[]; for(var v=min; v<=max; v+=step) a.push(v); return a; }
 
