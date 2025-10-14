@@ -1,60 +1,226 @@
-<script>
-(function(){
-  // Utility
-  function $(s){ return document.querySelector(s); }
-  function getArr(k){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : []; }catch(e){ return []; } }
-  function toInt(v){ var n = Number(v); return isFinite(n) ? Math.trunc(n) : 0; }
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>
+    :root { --wh-header-h: 2.25in; }
+    header, .header, .app-header, .site-header, #header {
+      min-height: var(--wh-header-h) !important;
+      height: var(--wh-header-h) !important;
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #fff;
+    }
+    header h1, .header h1, .app-header h1, .site-header h1, #header h1 {
+      margin: 0 !important;
+      line-height: 1.1 !important;
+    }
+    header img#logoLeft,
+    header .left-img,
+    header .brand-left img,
+    #header img#logoLeft,
+    #header .left-img,
+    #header .brand-left img,
+    header img:first-of-type {
+      position: absolute !important;
+      left: 14px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      height: calc(100% - 20px) !important;
+      width: auto !important;
+    }
+    header img.right-img,
+    header .brand-right img,
+    #header img.right-img,
+    #header .brand-right img,
+    header img:last-of-type {
+      position: absolute !important;
+      right: 14px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      height: calc(100% - 20px) !important;
+      width: auto !important;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color: #111;
+      background: #fafafa;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 18px auto 28px auto;
+      padding: 0 14px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fff;
+    }
+    .card + .card {
+      margin-top: 16px;
+    }
+    .card h2 {
+      margin: 0 0 10px 0;
+    }
+    .muted {
+      color: #666;
+      font-size: 12px;
+    }
+    .list .row {
+      border-top: 1px dashed #eaeaea;
+      padding: 10px 2px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .list .row:first-child {
+      border-top: none;
+    }
+    .list .row > div:nth-child(1) {
+      min-width: 260px;
+    }
+    .list .row .score {
+      font-weight: 800;
+      font-size: 22px;
+      min-width: 90px;
+      text-align: right;
+      margin-left: auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      font-size: 11px;
+      color: #444;
+      background: #f5f5f5;
+      vertical-align: middle;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #000;
+      background: #e53935;
+      color: #000;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn:hover { filter: brightness(0.93); }
+    .chip { font-size: 12px; color: #333; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <img src="Legion whole hog logo.png" alt="Logo" onerror="this.style.display='none'"/>
+    <h1>Leaderboard</h1>
+    <img src="AL Medallion.png" alt="Logo" onerror="this.style.display='none'"/>
+  </header>
+  <nav id="wholehog-nav">
+    <a href="./landing.html">Go to Landing</a>
+    <a href="./onsite.html">Go to On-site</a>
+    <a href="./blind.html">Go to Blind Taste</a>
+    <a href="./sauce.html">Go to Sauce Tasting</a>
+  </nav>
+  <main class="container">
+    <section class="card" id="onsite-card">
+      <h2>On-site Leaders</h2>
+      <div class="muted">Totals are the <strong>sum of all judges’ category points</strong>. Tie-breaker: <strong>Meat &amp; Sauce → Skin → Moisture</strong>. (No chip toggle on On-site.)</div>
+      <div id="onsite-list" class="list"></div>
+    </section>
 
-  // BLIND - only utilized chips
-  function paintBlind(){
-    var host = $('#blind-list');
-    if (!host) return;
-    var rows = getArr('blindTasteEntries');
-    var chips = {};
-    rows.forEach(r=>{
-      var chip = r.chip_number || r.chip;
-      if (!chip) return;
-      chips[chip] = (chips[chip]||0) + toInt(r.score_total || r.score);
-    });
-    var html = Object.entries(chips)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([chip,score])=>`<div class="row"><div><strong>Chip #${chip}</strong></div><div class="score">${score}</div></div>`)
-      .join('');
-    host.innerHTML = html || '<div class="muted">No blind tasting scores yet.</div>';
-  }
+    <section class="card" id="division-tops-card">
+      <h2>Division Leaders (On-site)</h2>
+      <div class="muted">Top team from each division based on On-site totals (sum only). Uses <code>landingTeamDivisions</code>.</div>
+      <div id="division-tops-list" class="list"></div>
+    </section>
 
-  // SAUCE - only utilized chips
-  function paintSauce(){
-    var host = $('#sauce-list');
-    if (!host) return;
-    var rows = getArr('sauceScores');
-    var chips = {};
-    rows.forEach(r=>{
-      var chip = r.chip || r.chip_number;
-      if (!chip) return;
-      chips[chip] = (chips[chip]||0) + toInt(r.score);
-    });
-    var html = Object.entries(chips)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([chip,score])=>`<div class="row"><div><strong>Chip #${chip}</strong></div><div class="score">${score}</div></div>`)
-      .join('');
-    host.innerHTML = html || '<div class="muted">No sauce tasting scores yet.</div>';
-  }
+    <section class="card" id="blind-card">
+      <h2>Blind Tasting</h2>
+      <div class="muted">Totals are the <strong>sum</strong> of all judges’ blind scores (no averaging).</div>
+      <div id="blind-list" class="list"></div>
+    </section>
 
-  function paintOnsite(){
-    var host = $('#onsite-list');
-    if (!host) return;
-    host.innerHTML = '<div class="muted">On-site leaderboard coming soon.</div>';
-  }
+    <section class="card" id="sauce-card">
+      <h2>Sauce Tasting</h2>
+      <div class="muted">Totals are the <strong>sum</strong> of all judges’ sauce scores (no averaging).</div>
+      <div id="sauce-list" class="list"></div>
+    </section>
+  </main>
+  <script>
+  (function(){
+    // Utility
+    function $(s){ return document.querySelector(s); }
+    function getArr(k){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : []; }catch(e){ return []; } }
+    function toInt(v){ var n = Number(v); return isFinite(n) ? Math.trunc(n) : 0; }
 
-  function paintAll(){
-    paintOnsite();
-    paintBlind();
-    paintSauce();
-  }
+    // BLIND - only utilized chips
+    function paintBlind(){
+      var host = $('#blind-list');
+      if (!host) return;
+      var rows = getArr('blindTasteEntries');
+      var chips = {};
+      rows.forEach(r=>{
+        var chip = r.chip_number || r.chip;
+        if (!chip) return;
+        chips[chip] = (chips[chip]||0) + toInt(r.score_total || r.score);
+      });
+      var html = Object.entries(chips)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([chip,score])=>`<div class="row"><div><strong>Chip #${chip}</strong></div><div class="score">${score}</div></div>`)
+        .join('');
+      host.innerHTML = html || '<div class="muted">No blind tasting scores yet.</div>';
+    }
 
-  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', paintAll); else paintAll();
-  document.addEventListener('visibilitychange', function(){ if (!document.hidden) paintAll(); });
-  window.addEventListener('storage', function(e){ paintAll(); });
-})();
-</script>
+    // SAUCE - only utilized chips
+    function paintSauce(){
+      var host = $('#sauce-list');
+      if (!host) return;
+      var rows = getArr('sauceScores');
+      var chips = {};
+      rows.forEach(r=>{
+        var chip = r.chip || r.chip_number;
+        if (!chip) return;
+        chips[chip] = (chips[chip]||0) + toInt(r.score);
+      });
+      var html = Object.entries(chips)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([chip,score])=>`<div class="row"><div><strong>Chip #${chip}</strong></div><div class="score">${score}</div></div>`)
+        .join('');
+      host.innerHTML = html || '<div class="muted">No sauce tasting scores yet.</div>';
+    }
+
+    function paintOnsite(){
+      var host = $('#onsite-list');
+      if (!host) return;
+      host.innerHTML = '<div class="muted">On-site leaderboard coming soon.</div>';
+    }
+    function paintDivisionTops(){
+      var host = $('#division-tops-list');
+      if (!host) return;
+      host.innerHTML = '<div class="muted">Division leaders coming soon.</div>';
+    }
+    function paintAll(){
+      paintOnsite();
+      paintDivisionTops();
+      paintBlind();
+      paintSauce();
+    }
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', paintAll); else paintAll();
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) paintAll(); });
+    window.addEventListener('storage', function(e){ paintAll(); });
+  })();
+  </script>
+</body>
+</html>
