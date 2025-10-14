@@ -4,9 +4,8 @@
   <meta charset="utf-8" />
   <title>Blind Taste</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- CSS brought from landing head -->
-<link rel="stylesheet" href="styles.css"/>
-<style id="wh-hard-header">
+  <link rel="stylesheet" href="styles.css"/>
+  <style id="wh-hard-header">
 :root { --wh-header-h: 2.25in; }
 header, .header, .app-header, .site-header, #header {
   min-height: var(--wh-header-h) !important;
@@ -20,7 +19,6 @@ header h1, .header h1, .app-header h1, .site-header h1, #header h1 {
   margin: 0 !important;
   line-height: 1.1 !important;
 }
-/* Left logo (common IDs/classes or first image) */
 header img#logoLeft,
 header .left-img,
 header .brand-left img,
@@ -32,10 +30,9 @@ header img:first-of-type {
   left: 14px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  height: calc(100% - 20px) !important;  /* fit inside header */
+  height: calc(100% - 20px) !important;
   width: auto !important;
 }
-/* Right logo (common classes or last image) */
 header img.right-img,
 header .brand-right img,
 #header img.right-img,
@@ -57,7 +54,6 @@ header img:last-of-type {
     }
     #wholehog-nav a{ display:inline-block; white-space:nowrap; width:auto; float:none!important; }
   </style>
-  <!-- Page-specific form styles -->
   <style>
 :root { --brand:#0d6efd; --ok:#198754; --warn:#ffc107; --bg:#f7f7fb; --ink:#1e1e2a; --muted:#6b7280; --line:#d1d5db; }
 *{box-sizing:border-box}
@@ -85,11 +81,8 @@ input[type="text"], select{width:100%; padding:10px 12px; border:1px solid var(-
   </style>
 </head>
 <body>
-
 <header class="header" style="height:2.25in; min-height:2.25in; position:relative; display:flex; align-items:center; justify-content:center;"><img id="logoLeft" src="Legion whole hog logo.png" alt="Logo" />
-
   <h1 style="margin:0; text-align:center;">Blind Taste</h1>
-  
 <img class="right-img" src="AL Medallion.png" alt="Logo" /></header>
 <div id="top-go-buttons" class="container" style="display:flex;gap:10px;align-items:center;justify-content:flex-start;margin-top:10px;margin-bottom:0;">
   <button type="button" class="btn btn-ghost" id="go-landing-top" onclick="location.href='landing.html'">Go to Landing</button>
@@ -97,11 +90,9 @@ input[type="text"], select{width:100%; padding:10px 12px; border:1px solid var(-
   <button type="button" class="btn btn-ghost" id="go-onsite-top" onclick="location.href='onsite.html'">Go to On-site</button>
   <button type="button" onclick="location.href='./sauce.html'" class="btn btn-ghost">Go to Sauce Tasting</button>
 </div>
-
-  <main class="container">
+<main class="container">
     <form id="blind-form" class="card" autocomplete="off">
       <h2 style="margin:0 0 12px 0;">Entry</h2>
-
       <div class="row">
         <label for="judge-select">Judge</label>
         <div>
@@ -111,7 +102,6 @@ input[type="text"], select{width:100%; padding:10px 12px; border:1px solid var(-
           <div class="muted">Pulled from <code>localStorage.judgesList</code> (set on landing page Setup panel).</div>
         </div>
       </div>
-
       <div class="row">
         <label for="chip-select">Chip #</label>
         <div>
@@ -125,38 +115,31 @@ input[type="text"], select{width:100%; padding:10px 12px; border:1px solid var(-
           <div class="muted">Pulled from <code>localStorage.chipsList</code>. You can add more here.</div>
         </div>
       </div>
-
       <div class="card" style="margin-top:8px;">
         <h3 style="margin:0 0 8px 0;">Appearance (2–40)</h3>
         <div id="scores-appearance" class="score-grid" data-category="appearance"></div>
       </div>
-
       <div class="card" style="margin-top:8px;">
         <h3 style="margin:0 0 8px 0;">Tenderness (2–40)</h3>
         <div id="scores-tenderness" class="score-grid" data-category="tenderness"></div>
       </div>
-
       <div class="card" style="margin-top:8px;">
         <h3 style="margin:0 0 8px 0;">Taste (4–80)</h3>
         <div id="scores-flavor" class="score-grid" data-category="flavor"></div>
       </div>
-
       <div class="totals">
         <span>Total:</span>
         <span id="score-total">0</span>
         <span class="muted">(Max 160)</span>
       </div>
-
       <div class="actions">
         <button type="submit" class="btn btn-primary" id="save-blind-taste">Save Blind Taste</button>
         <button type="button" class="btn btn-ok" id="export-csv">Export CSV</button>
         <button type="button" class="btn btn-ghost" id="clear-form">Clear Form</button>
       </div>
-
       <div id="status" class="status" aria-live="polite"></div>
     </form>
   </main>
-
   <script>
   (function(){
     // CHIP LOGIC: Initialize chipsList if missing/empty
@@ -201,20 +184,33 @@ input[type="text"], select{width:100%; padding:10px 12px; border:1px solid var(-
     function uniqueClean(arr){return Array.from(new Set(arr.map(s=>String(s).trim()).filter(Boolean)));}
 
     function renderJudges(){
-      const judges=uniqueClean(readJSON(LS_JUDGES,[]));
-      judgeSelect.innerHTML='<option value="" disabled>Select judge</option>'+judges.map(j=>`<option value="${j.replace(/"/g,'&quot;')}">${j}</option>`).join('');
-      judgeSelect.selectedIndex=0;
-      if(!judges.length){setStatus('No judges found. Open landing page and click "Save Lists".');}
+      // Try both keys and accept objects and strings
+      let judges = [];
+      try {
+        judges = JSON.parse(localStorage.getItem('judgesList') || '[]');
+        if (!Array.isArray(judges) || judges.length === 0) {
+          judges = JSON.parse(localStorage.getItem('wh_Judges') || '[]');
+        }
+        // If objects, extract the name property
+        if (judges.length && typeof judges[0] === 'object') {
+          judges = judges.map(j => j.name).filter(Boolean);
+        }
+      } catch {}
+      judges = Array.from(new Set(judges.map(s => String(s).trim()).filter(Boolean)));
+      judgeSelect.innerHTML = '<option value="" disabled>Select judge</option>' +
+        judges.map(j => `<option value="${j.replace(/"/g,'&quot;')}">${j}</option>`).join('');
+      judgeSelect.selectedIndex = 0;
+      if (!judges.length) { setStatus('No judges found. Open landing page and click "Save Lists".'); }
     }
     function renderChips(){
-      let chips=uniqueClean(readJSON(LS_CHIPS,[])); chips=chips.filter(x=>/^\d+$/.test(x)).sort((a,b)=>Number(a)-Number(b));
-      chipSelect.innerHTML='<option value="" disabled>Select chip #</option>'+chips.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+      let chips=uniqueClean(readJSON(LS_CHIPS,[])); chips=chips.filter(x=>/^[\d]+$/.test(x)).sort((a,b)=>Number(a)-Number(b));
+      chipSelect.innerHTML='<option value="" disabled>Select chip #</option>'+chips.map(c=>`<option value="${c.replace(/"/g,'&quot;')}" >${c}</option>`).join('');
       chipSelect.selectedIndex=0;
       if(!chips.length){setStatus('No chips found. Open landing page and click "Save Lists".');}
     }
     function addChip(){
       const v=String(chipAddIn.value||'').trim();
-      if(!/^\d+$/.test(v)){setStatus('Chip # must be a number.');return;}
+      if(!/^[\d]+$/.test(v)){setStatus('Chip # must be a number.');return;}
       const chips=readJSON(LS_CHIPS,[]);
       if(!chips.includes(v)){chips.push(v);writeJSON(LS_CHIPS,chips);}
       chipAddIn.value=''; renderChips(); setStatus('Chip # added.',true);
@@ -272,7 +268,7 @@ input[type="text"], select{width:100%; padding:10px 12px; border:1px solid var(-
       form.addEventListener('submit',onSave);
       exportBtn.addEventListener('click',exportCSV);
       clearBtn.addEventListener('click',clearForm);
-      window.addEventListener('storage',e=>{if(e.key==='judgesList')renderJudges(); if(e.key==='chipsList')renderChips();});
+      window.addEventListener('storage',e=>{if(e.key==='judgesList'||e.key==='wh_Judges')renderJudges(); if(e.key==='chipsList')renderChips();});
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
   })();
