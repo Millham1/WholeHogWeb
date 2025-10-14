@@ -4,6 +4,10 @@
   const APPEARANCE = even(2,40,2);
   const COLOR      = even(2,40,2);
   const STEP4      = even(4,80,4); // skin, moisture, meatSauce
+  // Add 70, 74, 78 to STEP4 for skin, moisture, meatSauce
+  STEP4.splice(STEP4.indexOf(72), 0, 70);
+  STEP4.splice(STEP4.indexOf(76), 0, 74);
+  STEP4.splice(STEP4.indexOf(80), 0, 78);
 
   const $ = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
