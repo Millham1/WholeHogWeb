@@ -145,10 +145,11 @@
         return 0;
       }).map(function(x,idx,arr){
         var tie = '';
-        if (idx>0 && x.total===arr[idx-1].total){
+        // Only mark tiebreaker if this is first place (idx=0) AND second place exists AND they have same total
+        if (idx===0 && arr.length>1 && x.total===arr[1].total){
           for (var j=0;j<ORDER.length;j++){
             var k = ORDER[j];
-            if ((x.cat[k]||0)!==(arr[idx-1].cat[k]||0)){ tie = k; break; }
+            if ((x.cat[k]||0)!==(arr[1].cat[k]||0)){ tie = k; break; }
           }
         }
         return { team:x.team, total:x.total, tie:tie };
