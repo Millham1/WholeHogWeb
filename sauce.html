@@ -11,12 +11,10 @@
     header { height:var(--wh-header-h); min-height:var(--wh-header-h); position:relative; display:flex; align-items:center; justify-content:center; background:white; }
     header h1 { margin:0; line-height:1.1; text-align:center; }
     header img:first-of-type { position:absolute; left:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
-    header img:last-of-type  { position:absolute; right:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
-
+    header img:last-of-type { position:absolute; right:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
     #wholehog-nav { max-width:820px; margin:12px auto; display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; text-align:center; }
-    #wholehog-nav a { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; padding:10px 14px; border-radius:10px; background:#e53935; color:#000; font-weight:800; border:2px solid #000; text-decoration:none; min-width:180px; }
+    #wholehog-nav a { display:inline-block; white-space:nowrap; width:auto; }
     #wholehog-nav a:hover { filter:brightness(0.92); }
-
     .container { max-width:1100px; margin:18px auto; padding:0 14px; }
     .card { border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff; }
     .card h2 { margin:0 0 10px 0; }
@@ -31,26 +29,24 @@
 </head>
 <body>
   <header class="header">
-    <img src="Legion whole hog logo.png" alt="Logo" onerror="this.style.display='none'"/>
+    <img src="Legion whole hog logo.png" alt="Logo" />
     <h1>Sauce Tasting</h1>
-    <img src="AL Medallion.png" alt="Logo" onerror="this.style.display='none'"/>
+    <img src="AL Medallion.png" alt="Logo" />
   </header>
-
   <nav id="wholehog-nav">
-  <a href="./landing.html">Go to Landing</a>
-  <a href="./onsite.html">Go to On-Site</a>
-  <a href="./blind.html">Go to Blind Taste</a>
-  <a href="./leaderboard.html">Go to Leaderboard</a>
-</nav>
-
+    <a href="./landing.html">Go to Landing</a>
+    <a href="./onsite.html">Go to On-Site</a>
+    <a href="./blind.html">Go to Blind Taste</a>
+    <a href="./leaderboard.html">Go to Leaderboard</a>
+  </nav>
   <main class="container">
     <section class="card">
       <h2>Enter Sauce Score</h2>
       <div class="row">
         <div class="field" style="flex:1 1 260px; min-width:220px;">
-          <label for="team">Team</label>
-          <select id="team" class="input">
-            <option value="">Select team…</option>
+          <label for="chip">Chip #</label>
+          <select id="chip" class="input">
+            <option value="">Select chip…</option>
           </select>
         </div>
         <div class="field" style="flex:1 1 260px; min-width:220px;">
@@ -70,25 +66,28 @@
       <div class="muted" id="status" style="margin-top:8px;">Saved scores appear on the Leaderboard → Sauce Tasting.</div>
     </section>
   </main>
-
   <script>
   (function(){
-    const K = { teams:'wh_Teams', judges:'wh_Judges', selTeam:'selectedTeamName', selJudge:'selectedJudgeName', sauce:'sauceScores' };
+    // Initialize sauceChipsList if missing/empty
+    if (!localStorage.getItem('sauceChipsList') || JSON.parse(localStorage.getItem('sauceChipsList')).length === 0) {
+      localStorage.setItem('sauceChipsList', JSON.stringify(Array.from({length:21}, (_,i) => String(200+i))));
+    }
+
+    const K = { judges:'wh_Judges', selChip:'selectedSauceChip', selJudge:'selectedJudgeName', sauce:'sauceScores', sauceChips:'sauceChipsList' };
     const $ = (s,r)=> (r||document).querySelector(s);
     function getList(k){ try { return JSON.parse(localStorage.getItem(k)||'[]'); } catch { return []; } }
     function setList(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
     function getStr(k){ const v=localStorage.getItem(k); return (typeof v==='string')?v:''; }
-    function uniqNames(arr,prop){ if(!Array.isArray(arr)) return []; const n=arr.map(o=>(o&&o[prop])?String(o[prop]):'').filter(Boolean); return Array.from(new Set(n)); }
 
     function refreshDropdowns(){
-      const teams  = uniqNames(getList(K.teams),'name');
-      const judges = uniqNames(getList(K.judges),'name');
-      const teamSel = $('#team'), judgeSel = $('#judge');
-      const curT = getStr(K.selTeam), curJ = getStr(K.selJudge);
+      const chips = getList(K.sauceChips);
+      const judges = getList(K.judges).map(o=>o.name||o).filter(Boolean);
+      const chipSel = $('#chip'), judgeSel = $('#judge');
+      const curC = getStr(K.selChip), curJ = getStr(K.selJudge);
 
-      if (teamSel){
-        teamSel.innerHTML = ['<option value="">Select team…</option>'].concat(teams.map(n=>`<option value="${n}">${n}</option>`)).join('');
-        if (curT && teams.includes(curT)) teamSel.value = curT;
+      if (chipSel){
+        chipSel.innerHTML = ['<option value="">Select chip…</option>'].concat(chips.map(n=>`<option value="${n}">${n}</option>`)).join('');
+        if (curC && chips.includes(curC)) chipSel.value = curC;
       }
       if (judgeSel){
         judgeSel.innerHTML = ['<option value="">Select judge…</option>'].concat(judges.map(n=>`<option value="${n}">${n}</option>`)).join('');
@@ -97,32 +96,32 @@
     }
 
     function enterScore(){
-      const team = $('#team')?.value || '';
+      const chip = $('#chip')?.value || '';
       const judge = $('#judge')?.value || '';
       const scr = Number($('#score')?.value);
-      if (!team)  { alert('Please select a team.'); return; }
+      if (!chip)  { alert('Please select a chip number.'); return; }
       if (!judge) { alert('Please select a judge.'); return; }
       if (!Number.isFinite(scr)) { alert('Enter a numeric score.'); return; }
 
       const arr = getList(K.sauce);
-      arr.unshift({ team, judge, score: scr, ts: new Date().toISOString() });
+      arr.unshift({ chip, judge, score: scr, ts: new Date().toISOString() });
       setList(K.sauce, arr);
 
-      localStorage.setItem(K.selTeam, team);
+      localStorage.setItem(K.selChip, chip);
       localStorage.setItem(K.selJudge, judge);
 
       if ($('#score')) $('#score').value = '';
       const st = $('#status'); if (st) { st.textContent = 'Saved locally at ' + new Date().toLocaleTimeString(); setTimeout(()=>st.textContent='Saved scores appear on the Leaderboard → Sauce Tasting.', 3000); }
-      alert('Sauce score saved for ' + team);
+      alert('Sauce score saved for chip #' + chip);
     }
 
     document.addEventListener('DOMContentLoaded', ()=>{
       refreshDropdowns();
       const btn = $('#enterBtn'); if (btn) btn.addEventListener('click', enterScore);
-      const teamSel = $('#team'); if (teamSel) teamSel.addEventListener('change', ()=>{ if(teamSel.value) localStorage.setItem(K.selTeam, teamSel.value); });
+      const chipSel = $('#chip'); if (chipSel) chipSel.addEventListener('change', ()=>{ if(chipSel.value) localStorage.setItem(K.selChip, chipSel.value); });
       const judgeSel = $('#judge'); if (judgeSel) judgeSel.addEventListener('change', ()=>{ if(judgeSel.value) localStorage.setItem(K.selJudge, judgeSel.value); });
     });
-    window.addEventListener('storage', (e)=>{ if (e && (e.key==='wh_Teams' || e.key==='wh_Judges')) refreshDropdowns(); });
+    window.addEventListener('storage', (e)=>{ if (e && (e.key===K.sauceChips || e.key===K.judges)) refreshDropdowns(); });
     document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) refreshDropdowns(); });
   })();
   </script>
