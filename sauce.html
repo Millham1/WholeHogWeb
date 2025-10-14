@@ -12,9 +12,6 @@
     header h1 { margin:0; line-height:1.1; text-align:center; }
     header img:first-of-type { position:absolute; left:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
     header img:last-of-type { position:absolute; right:14px; top:50%; transform:translateY(-50%); height:calc(100% - 20px); width:auto; }
-    #wholehog-nav { max-width:820px; margin:12px auto; display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; text-align:center; }
-    #wholehog-nav a { display:inline-block; white-space:nowrap; width:auto; }
-    #wholehog-nav a:hover { filter:brightness(0.92); }
     .container { max-width:1100px; margin:18px auto; padding:0 14px; }
     .card { border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff; }
     .card h2 { margin:0 0 10px 0; }
@@ -33,12 +30,12 @@
     <h1>Sauce Tasting</h1>
     <img src="AL Medallion.png" alt="Logo" />
   </header>
-  <nav id="wholehog-nav">
-    <a href="./landing.html">Go to Landing</a>
-    <a href="./onsite.html">Go to On-Site</a>
-    <a href="./blind.html">Go to Blind Taste</a>
-    <a href="./leaderboard.html">Go to Leaderboard</a>
-  </nav>
+  <div id="top-go-buttons" class="container" style="display:flex;gap:10px;align-items:center;justify-content:flex-start;margin-top:10px;margin-bottom:0;">
+    <button type="button" class="btn btn-ghost" onclick="location.href='landing.html'">Go to Landing</button>
+    <button type="button" class="btn btn-ghost" onclick="location.href='onsite.html'">Go to On-Site</button>
+    <button type="button" class="btn btn-ghost" onclick="location.href='blind.html'">Go to Blind Taste</button>
+    <button type="button" class="btn btn-ghost" onclick="location.href='leaderboard.html'">Go to Leaderboard</button>
+  </div>
   <main class="container">
     <section class="card">
       <h2>Enter Sauce Score</h2>
@@ -81,7 +78,13 @@
 
     function refreshDropdowns(){
       const chips = getList(K.sauceChips);
-      const judges = getList(K.judges).map(o=>o.name||o).filter(Boolean);
+      let judges = getList(K.judges);
+      // Accept both object and string formats
+      if (judges.length && typeof judges[0] === 'object') {
+        judges = judges.map(j => j.name).filter(Boolean);
+      }
+      judges = judges.map(n=>String(n)).filter(Boolean);
+
       const chipSel = $('#chip'), judgeSel = $('#judge');
       const curC = getStr(K.selChip), curJ = getStr(K.selJudge);
 
