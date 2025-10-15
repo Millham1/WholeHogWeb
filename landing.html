@@ -46,6 +46,9 @@
   }
   #wholehog-nav a:hover, #top-go-buttons a:hover{ filter:brightness(0.92); }
 </style>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
 </head>
 <body>
   <header class="header">
@@ -136,46 +139,34 @@
     </section>
   </div>
 
-  <!-- Local-only logic: teams & judges (no network) -->
+  <!-- Supabase-based logic: teams & judges -->
   <script>
     (function(){
-      // Keys
-      const K = {
-        teams: 'wh_Teams',
-        judges: 'wh_Judges',
-        selTeam: 'selectedTeamName',
-        selJudge: 'selectedJudgeName',
-        chipMap: 'wh_chipByTeam',
-        blindA: 'blindEntries',
-        blindB: 'blindScores',
-        onsite: 'onsiteScores'
-      };
+      function waitForSupabase(callback) {
+        if (window.supabase && typeof window.supabase.from === 'function') {
+          callback(window.supabase);
+        } else {
+          setTimeout(() => waitForSupabase(callback), 100);
+        }
+      }
 
       // Helpers
       const $ = (s,r)=> (r||document).querySelector(s);
-      function getList(k){ try { return JSON.parse(localStorage.getItem(k)||'[]'); } catch { return []; } }
-      function setList(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
-      function getJSON(k, fb){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } }
-      function setJSON(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 
-      function hasChip(team){
-        if (!team) return false;
-        const map = getJSON(K.chipMap, null);
-        if (map && typeof map==='object' && String(map[team]||'').trim()!=='') return true;
-        for (const key of [K.blindA, K.blindB, K.onsite]){
-          const arr = getList(key);
-          if (arr.some(r => ((r.team||r.teamName)||'')===team && String((r.chip||r.chip_number||'')).trim()!=='')) return true;
-        }
-        return false;
-      }
-
-      function renderTeams(){
+      async function renderTeams(sb){
         const ul = $('#whTeamsList');
         if (!ul) return;
-        const teams = getList(K.teams);
-        if (!teams.length){ ul.innerHTML = ''; return; }
+        
+        const { data: teams, error } = await sb.from('teams').select('*').order('name', { ascending: true });
+        if (error) {
+          console.error('Error loading teams:', error);
+          ul.innerHTML = '<div class="muted">Error loading teams</div>';
+          return;
+        }
+        
+        if (!teams || !teams.length){ ul.innerHTML = '<div class="muted">No teams yet.</div>'; return; }
 
-        const anySite = teams.some(t => (t.site||'').trim()!=='');
+        const anySite = teams.some(t => (t.site_number||'').toString().trim()!=='');
         const head = `
           <li style="padding:6px 4px;border-bottom:2px solid #ddd;display:grid;grid-template-columns:160px 1fr ${anySite?'120px':''} 140px;gap:8px;font-weight:700;">
             <span>Affiliation</span>
@@ -187,8 +178,8 @@
         const rows = teams.map(t=>{
           const aff  = t.affiliation || '';
           const name = t.name || '';
-          const site = (t.site||'').toString();
-          const chip = hasChip(name) ? 'Yes' : 'No';
+          const site = (t.site_number||'').toString();
+          const chip = (t.chip_number && t.chip_number.toString().trim() !== '') ? 'Yes' : 'No';
           return `
             <li style="padding:6px 4px;border-bottom:1px solid #eee;display:grid;grid-template-columns:160px 1fr ${anySite?'120px':''} 140px;gap:8px;align-items:center;">
               <span>${aff}</span>
@@ -201,17 +192,24 @@
         ul.innerHTML = head + rows;
       }
 
-      function renderJudges(){
+      async function renderJudges(sb){
         const host = $('#judgesList');
         if (!host) return;
-        const judges = getList(K.judges);
-        if (!judges.length){ host.innerHTML = ''; return; }
+        
+        const { data: judges, error } = await sb.from('judges').select('*').order('name', { ascending: true });
+        if (error) {
+          console.error('Error loading judges:', error);
+          host.innerHTML = '<div class="muted">Error loading judges</div>';
+          return;
+        }
+        
+        if (!judges || !judges.length){ host.innerHTML = '<div class="muted">No judges yet.</div>'; return; }
         host.innerHTML = '<ul class="clean" style="margin:8px 0 0; padding-left:16px; list-style:disc inside;">' +
           judges.map(j => `<li>${j.name||''}</li>`).join('') + '</ul>';
       }
 
       // Add Team
-      function onAddTeam(ev){
+      async function onAddTeam(ev, sb){
         ev.preventDefault();
 
         const nameEl = $('#whTeamName');
@@ -223,23 +221,42 @@
         const name = String(nameEl && nameEl.value || '').trim();
         if (!name){ alert('Enter a team name.'); return; }
 
-        const teams = getList(K.teams);
-        let rec = teams.find(t => (t.name||'').toLowerCase() === name.toLowerCase());
-
         const aff = (legEl && legEl.checked ? 'Legion' : '') + (sonEl && sonEl.checked ? ((legEl&&legEl.checked)?' & ':'')+'Sons' : '');
         const site = String(siteEl && siteEl.value || '').trim();
-
-        if (rec){ rec.affiliation = aff; rec.site = site; }
-        else { teams.push({ name, affiliation: aff, site, ts: new Date().toISOString() }); }
-        setList(K.teams, teams);
-        localStorage.setItem(K.selTeam, name);
-
-        // Save chip immediately so "Chip Entered" flips to Yes
         const chipVal = String(chipEl && chipEl.value || '').trim();
-        if (chipVal){
-          const cmap = getJSON(K.chipMap, {}) || {};
-          cmap[name] = chipVal;
-          setJSON(K.chipMap, cmap);
+
+        // Check if team already exists
+        const { data: existing } = await sb.from('teams').select('id').eq('name', name).maybeSingle();
+        
+        let result;
+        if (existing) {
+          // Update existing team
+          result = await sb.from('teams')
+            .update({ 
+              affiliation: aff, 
+              site_number: site || null,
+              chip_number: chipVal || null
+            })
+            .eq('id', existing.id)
+            .select()
+            .single();
+        } else {
+          // Insert new team
+          result = await sb.from('teams')
+            .insert([{ 
+              name, 
+              affiliation: aff, 
+              site_number: site || null,
+              chip_number: chipVal || null
+            }])
+            .select()
+            .single();
+        }
+
+        if (result.error) {
+          console.error('Team save error:', result.error);
+          alert('Failed to save team: ' + result.error.message);
+          return;
         }
 
         // Clear inputs & checkboxes
@@ -249,104 +266,65 @@
         if (legEl)  legEl.checked = false;
         if (sonEl)  sonEl.checked = false;
 
-        renderTeams();
-        alert('Team saved locally: ' + name);
+        await renderTeams(sb);
+        alert('Team saved: ' + name);
       }
 
       // Add Judge
-      function onAddJudge(ev){
+      async function onAddJudge(ev, sb){
         ev.preventDefault();
         const nameEl = $('#judgeName');
         const name = String(nameEl && nameEl.value || '').trim();
         if (!name){ alert('Enter a judge name.'); return; }
 
-        const judges = getList(K.judges);
-        if (!judges.some(j => (j.name||'').toLowerCase() === name.toLowerCase())){
-          judges.push({ name, ts: new Date().toISOString() });
-          setList(K.judges, judges);
+        // Check if judge already exists
+        const { data: existing } = await sb.from('judges').select('id').eq('name', name).maybeSingle();
+        
+        if (existing) {
+          alert('Judge already exists: ' + name);
+          if (nameEl) nameEl.value = '';
+          return;
         }
-        localStorage.setItem(K.selJudge, name);
+
+        const { error } = await sb.from('judges').insert([{ name }]);
+        
+        if (error) {
+          console.error('Judge save error:', error);
+          alert('Failed to save judge: ' + error.message);
+          return;
+        }
 
         if (nameEl) nameEl.value = '';
-        renderJudges();
-        alert('Judge saved locally: ' + name);
+        await renderJudges(sb);
+        alert('Judge saved: ' + name);
       }
 
       // Init
-      document.addEventListener('DOMContentLoaded', function(){
-        // Wire exact controls on this page
-        const addTeamBtn = document.getElementById('whBtnAddTeam');
-        if (addTeamBtn){
-          // Replace node to drop any previous listeners if this file gets modified later
-          const clone = addTeamBtn.cloneNode(true);
-          addTeamBtn.parentNode.replaceChild(clone, addTeamBtn);
-          clone.addEventListener('click', onAddTeam);
-        }
+      waitForSupabase(function(sb){
+        document.addEventListener('DOMContentLoaded', function(){
+          // Wire exact controls on this page
+          const addTeamBtn = document.getElementById('whBtnAddTeam');
+          if (addTeamBtn){
+            // Replace node to drop any previous listeners if this file gets modified later
+            const clone = addTeamBtn.cloneNode(true);
+            addTeamBtn.parentNode.replaceChild(clone, addTeamBtn);
+            clone.addEventListener('click', (ev) => onAddTeam(ev, sb));
+          }
 
-        const judgeForm = document.getElementById('judgeForm');
-        if (judgeForm){
-          const cloneF = judgeForm.cloneNode(true);
-          judgeForm.parentNode.replaceChild(cloneF, judgeForm);
-          cloneF.addEventListener('submit', onAddJudge);
-        }
+          const judgeForm = document.getElementById('judgeForm');
+          if (judgeForm){
+            const cloneF = judgeForm.cloneNode(true);
+            judgeForm.parentNode.replaceChild(cloneF, judgeForm);
+            cloneF.addEventListener('submit', (ev) => onAddJudge(ev, sb));
+          }
 
-        renderTeams();
-        renderJudges();
+          renderTeams(sb);
+          renderJudges(sb);
+        });
       });
     })();
   </script>
-<script id="wh-team-email-hook">
-(function(){
-  function $(id){ return document.getElementById(id); }
-  function isValidEmail(s){
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-  }
-  function safeParseMap(k){
-    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : {}; } catch(e){ return {}; }
-  }
-  function safeSaveMap(k, obj){
-    try { localStorage.setItem(k, JSON.stringify(obj)); } catch(e){}
-  }
 
-  document.addEventListener('DOMContentLoaded', function(){
-    var btn   = $('whBtnAddTeam');
-    var name  = $('whTeamName');
-    var email = $('whTeamEmail');
-    var err   = $('whTeamEmailErr');
-
-    if (!btn || !name) return;
-
-    // Validate & persist email BEFORE other click handlers run
-    btn.addEventListener('click', function(ev){
-      if (!email) return;
-
-      var teamName = (name.value || '').trim();
-      var mail     = (email.value || '').trim();
-
-      // If user typed an email, validate
-      if (mail.length){
-        if (!isValidEmail(mail)){
-          if (err) err.style.display = 'block';
-          ev.preventDefault();
-          ev.stopImmediatePropagation();
-          return;
-        }
-        // valid → save mapping
-        var map = safeParseMap('teamEmails');
-        if (teamName) { map[teamName] = mail; }
-        safeSaveMap('teamEmails', map);
-      } else {
-        if (err) err.style.display = 'none';
-      }
-
-      // clear email box after successful add (let existing handler proceed)
-      setTimeout(function(){
-        try { if (email) email.value = ''; if (err) err.style.display = 'none'; } catch(_){}
-      }, 0);
-    }, true); // capture: true → run before other handlers
-  });
-})();
-</script>
 </body></html>
 
 

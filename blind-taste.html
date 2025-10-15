@@ -16,8 +16,10 @@
     label.score-selected { border-radius: 4px; padding: 2px 4px; }
     .note { font-size: 13px; color: #555; }
   </style>
-
   <link rel="stylesheet" href="./bt-style.css">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
 </head>
 <body>
   <h1>Blind Taste</h1>
@@ -27,9 +29,6 @@
       <label>Judge
         <select id="judge-select" name="judge" required>
           <option value="" selected disabled>Select judge…</option>
-          <option value="J1">Judge 1</option>
-          <option value="J2">Judge 2</option>
-          <option value="J3">Judge 3</option>
         </select>
       </label>
 
@@ -62,15 +61,16 @@
 
   <script>
   (function(){
-    // ====== CONFIG (filled by script) ======
-    var SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-    var SUPABASE_KEY = "YOUR-ANON-KEY";
-    var REST = SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1";
+    function waitForSupabase(callback) {
+      if (window.supabase && typeof window.supabase.from === 'function') {
+        callback(window.supabase);
+      } else {
+        setTimeout(() => waitForSupabase(callback), 100);
+      }
+    }
 
-    // ====== HELPERS ======
     function $(sel){ return document.querySelector(sel); }
     function $all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
-    function firstSel(arr){ for (var i=0;i<arr.length;i++){ var el=$(arr[i]); if (el) return el; } return null; }
 
     function setHighlight(el,on){
       if (!el) return;
@@ -80,9 +80,7 @@
       el.classList.toggle("score-selected", !!on);
     }
 
-    // Highlight selected score in each category
     function wireHighlighting(){
-      // number inputs
       $all("input[data-score], input.score-field").forEach(function(inp){
         var upd = function(){
           var v = (inp.value==null ? "" : String(inp.value).trim());
@@ -92,22 +90,11 @@
         inp.addEventListener("change", upd, {passive:true});
         upd();
       });
-      // selects (if you use dropdowns for scores in future)
-      $all("select[data-score], select.score-field").forEach(function(sel){
-        var upd = function(){
-          var v = (sel.value==null ? "" : String(sel.value).trim());
-          setHighlight(sel, v !== "" && !Number.isNaN(Number(v)));
-        };
-        sel.addEventListener("change", upd, {passive:true});
-        sel.addEventListener("input", upd, {passive:true});
-        upd();
-      });
-      // radios/buttons supported too if added later
     }
 
     function computeTotal(){
       var total = 0;
-      $all("input[data-score], input.score-field, select[data-score], select.score-field").forEach(function(c){
+      $all("input[data-score], input.score-field").forEach(function(c){
         var v = (c.value==null ? "" : String(c.value).trim());
         var n = Number(v);
         if (!Number.isNaN(n)) total += n;
@@ -117,73 +104,68 @@
       return total;
     }
 
-    // ====== REST to Supabase ======
-    function sHeaders(extra){
-      var h = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
-      if (extra) { for (var k in extra) h[k]=extra[k]; }
-      return h;
-    }
-
-    async function loadChips(){
+    async function loadChips(sb){
       var sel = $("#chip-select");
       if (!sel) return;
-      // fetch chip numbers from teams table
       try {
-        var url = REST + "/teams?select=chip_number&order=chip_number.asc";
-        var res = await fetch(url, { method:"GET", headers: sHeaders({ "Accept": "application/json" }) });
-        var rows = res.ok ? await res.json() : [];
-        sel.innerHTML = "";
-        var ph = document.createElement("option");
-        ph.value = ""; ph.textContent = "Select chip #"; ph.disabled = true; ph.selected = true;
-        sel.appendChild(ph);
-        rows.forEach(function(r){
+        const { data: teams, error } = await sb.from('teams').select('chip_number').order('chip_number', { ascending: true });
+        if (error) throw error;
+        
+        sel.innerHTML = '<option value="" disabled selected>Select chip #</option>';
+        (teams || []).forEach(function(r){
           if (r && r.chip_number != null){
             var n = String(r.chip_number);
             var o = document.createElement("option");
-            o.value = n; o.textContent = n; // number only
+            o.value = n; o.textContent = n;
             sel.appendChild(o);
           }
         });
       } catch (e) {
         console.error("loadChips error", e);
-        // fallback (static)
-        sel.innerHTML = '<option value="" disabled selected>Select chip #</option><option>100</option><option>101</option>';
+        sel.innerHTML = '<option value="" disabled selected>Error loading chips</option>';
       }
     }
 
-    async function duplicateExists(judgeId, chipNum){
-      var url = REST + "/blind_taste?select=id&judge_id=eq." + encodeURIComponent(judgeId) + "&chip_number=eq." + encodeURIComponent(chipNum) + "&limit=1";
-      var res = await fetch(url, { method:"GET", headers: sHeaders({ "Accept": "application/json" }) });
-      if (!res.ok){ console.error("dup http", res.status); alert("Warning: could not verify duplicates."); return true; }
-      var rows = await res.json();
-      return Array.isArray(rows) && rows.length > 0;
+    async function loadJudges(sb){
+      var sel = $("#judge-select");
+      if (!sel) return;
+      try {
+        const { data: judges, error } = await sb.from('judges').select('*').order('name', { ascending: true });
+        if (error) throw error;
+        
+        sel.innerHTML = '<option value="" disabled selected>Select judge…</option>';
+        (judges || []).forEach(function(j){
+          var o = document.createElement("option");
+          o.value = j.id; o.textContent = j.name;
+          sel.appendChild(o);
+        });
+      } catch (e) {
+        console.error("loadJudges error", e);
+        sel.innerHTML = '<option value="" disabled selected>Error loading judges</option>';
+      }
     }
 
-    async function insertRow(row){
-      var res = await fetch(REST + "/blind_taste", {
-        method: "POST",
-        headers: sHeaders({ "Content-Type": "application/json", "Prefer": "return=representation" }),
-        body: JSON.stringify(row)
-      });
-      if (!res.ok){
-        var t = await res.text().catch(function(){ return ""; });
-        return { error: { message: t || ("HTTP " + res.status) } };
+    async function duplicateExists(sb, judgeId, chipNum){
+      const { data, error } = await sb.from('blind_taste')
+        .select('id')
+        .eq('judge_id', judgeId)
+        .eq('chip_number', chipNum)
+        .maybeSingle();
+      if (error) {
+        console.error("duplicate check error", error);
+        return false;
       }
-      var data = await res.json();
-      return { data: Array.isArray(data) ? data[0] : data };
+      return !!data;
     }
 
     function clearForm(){
       var form = $("#blind-taste-form");
       if (form && form.reset) form.reset();
-      // remove highlights
       $all(".score-selected").forEach(function(el){ el.classList.remove("score-selected"); });
       computeTotal();
     }
 
-    async function onSave(){
-      alert("Saving…"); // proves click handler is wired
-
+    async function onSave(sb){
       var judgeId = ($("#judge-select")?.value || "").trim();
       var chipRaw = ($("#chip-select")?.value || "").trim();
       var chipNum = Number(chipRaw);
@@ -191,52 +173,66 @@
       if (!judgeId){ alert("Please select a Judge."); return; }
       if (!chipRaw || Number.isNaN(chipNum) || chipNum <= 0){ alert("Please select a valid Chip #."); return; }
 
-      var total = computeTotal();
-      var row = { judge_id: judgeId, chip_number: chipNum, score_total: total };
-
-      // map per-name scores
       var app = Number(($("#blind-taste-form [name='appearance']")?.value || "").trim());
       var ten = Number(($("#blind-taste-form [name='tenderness']")?.value || "").trim());
       var fla = Number(($("#blind-taste-form [name='flavor']")?.value || "").trim());
-      if (!Number.isNaN(app)) row.score_appearance = app;
-      if (!Number.isNaN(ten)) row.score_tenderness = ten;
-      if (!Number.isNaN(fla)) row.score_flavor = fla;
+      
+      if (Number.isNaN(app) || Number.isNaN(ten) || Number.isNaN(fla)){
+        alert("Please enter all scores.");
+        return;
+      }
 
-      if (await duplicateExists(judgeId, chipNum)){
+      var total = computeTotal();
+      var row = { 
+        judge_id: judgeId, 
+        chip_number: chipNum, 
+        score_total: total,
+        score_appearance: app,
+        score_tenderness: ten,
+        score_flavor: fla
+      };
+
+      if (await duplicateExists(sb, judgeId, chipNum)){
         alert("This Judge + Chip # has already been saved.");
         return;
       }
 
       var btn = $("#save-blind-taste"); if (btn) btn.disabled = true;
-      var result = await insertRow(row);
+      
+      const { data, error } = await sb.from('blind_taste').insert([row]).select().single();
+      
       if (btn) btn.disabled = false;
 
-      if (result.error){
-        console.error("insert error", result.error);
-        alert(result.error.message || "Save failed.");
+      if (error){
+        console.error("insert error", error);
+        alert(error.message || "Save failed.");
         return;
       }
 
-      alert("Saved! Chip #" + result.data.chip_number + ", Judge " + result.data.judge_id + ".");
+      alert("Saved! Chip #" + data.chip_number + ", Judge " + judgeId + ".");
       clearForm();
     }
 
-    function wire(){
+    waitForSupabase(function(sb){
       wireHighlighting();
       computeTotal();
-      loadChips(); // populate chips from teams
+      loadChips(sb);
+      loadJudges(sb);
+      
       var btn = $("#save-blind-taste");
-      if (btn){ btn.addEventListener("click", function(e){ e.preventDefault(); onSave(); }); }
+      if (btn){ btn.addEventListener("click", function(e){ e.preventDefault(); onSave(sb); }); }
       else {
         var form = $("#blind-taste-form");
-        if (form){ form.addEventListener("submit", function(e){ e.preventDefault(); onSave(); }); }
+        if (form){ form.addEventListener("submit", function(e){ e.preventDefault(); onSave(sb); }); }
       }
-    }
-    document.addEventListener("DOMContentLoaded", wire);
+      
+      // Auto-compute total on input
+      $all("input[data-score], input.score-field").forEach(function(inp){
+        inp.addEventListener("input", computeTotal);
+        inp.addEventListener("change", computeTotal);
+      });
+    });
   })();
   </script>
-
-  <script src="./bt-inline.js" data-url="https://YOUR-PROJECT.supabase.co" data-key="YOUR-ANON-KEY"></script>
 </body>
 </html>
-

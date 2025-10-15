@@ -23,6 +23,9 @@
     .btn-primary { background:#111; color:#fff; }
     .muted { color:#666; font-size:12px; }
   </style>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
 </head>
 <body>
   <header class="header">
@@ -65,67 +68,88 @@
   </main>
   <script>
   (function(){
-    // Initialize sauceChipsList if missing/empty
-    if (!localStorage.getItem('sauceChipsList') || JSON.parse(localStorage.getItem('sauceChipsList')).length === 0) {
-      localStorage.setItem('sauceChipsList', JSON.stringify(Array.from({length:21}, (_,i) => String(200+i))));
+    function waitForSupabase(callback) {
+      if (window.supabase && typeof window.supabase.from === 'function') {
+        callback(window.supabase);
+      } else {
+        setTimeout(() => waitForSupabase(callback), 100);
+      }
     }
 
-    const K = { judges:'wh_Judges', selChip:'selectedSauceChip', selJudge:'selectedJudgeName', sauce:'sauceScores', sauceChips:'sauceChipsList' };
     const $ = (s,r)=> (r||document).querySelector(s);
-    function getList(k){ try { return JSON.parse(localStorage.getItem(k)||'[]'); } catch { return []; } }
-    function setList(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-    function getStr(k){ const v=localStorage.getItem(k); return (typeof v==='string')?v:''; }
 
-    function refreshDropdowns(){
-      const chips = getList(K.sauceChips);
-      let judges = getList(K.judges);
-      // Accept both object and string formats
-      if (judges.length && typeof judges[0] === 'object') {
-        judges = judges.map(j => j.name).filter(Boolean);
-      }
-      judges = judges.map(n=>String(n)).filter(Boolean);
-
+    async function refreshDropdowns(sb){
       const chipSel = $('#chip'), judgeSel = $('#judge');
-      const curC = getStr(K.selChip), curJ = getStr(K.selJudge);
 
-      if (chipSel){
-        chipSel.innerHTML = ['<option value="">Select chip…</option>'].concat(chips.map(n=>`<option value="${n}">${n}</option>`)).join('');
-        if (curC && chips.includes(curC)) chipSel.value = curC;
+      // Load chip numbers from teams
+      try {
+        const { data: teams, error: tErr } = await sb.from('teams').select('chip_number').order('chip_number', { ascending: true });
+        if (tErr) throw tErr;
+        
+        if (chipSel){
+          const chips = (teams || []).map(t => t.chip_number).filter(Boolean);
+          chipSel.innerHTML = '<option value="">Select chip…</option>' + chips.map(n=>`<option value="${n}">${n}</option>`).join('');
+        }
+      } catch (e) {
+        console.error('Error loading chips:', e);
+        if (chipSel) chipSel.innerHTML = '<option value="">Error loading chips</option>';
       }
-      if (judgeSel){
-        judgeSel.innerHTML = ['<option value="">Select judge…</option>'].concat(judges.map(n=>`<option value="${n}">${n}</option>`)).join('');
-        if (curJ && judges.includes(curJ)) judgeSel.value = curJ;
+
+      // Load judges
+      try {
+        const { data: judges, error: jErr } = await sb.from('judges').select('*').order('name', { ascending: true });
+        if (jErr) throw jErr;
+        
+        if (judgeSel){
+          judgeSel.innerHTML = '<option value="">Select judge…</option>' + (judges || []).map(j=>`<option value="${j.id}">${j.name}</option>`).join('');
+        }
+      } catch (e) {
+        console.error('Error loading judges:', e);
+        if (judgeSel) judgeSel.innerHTML = '<option value="">Error loading judges</option>';
       }
     }
 
-    function enterScore(){
-      const chip = $('#chip')?.value || '';
-      const judge = $('#judge')?.value || '';
-      const scr = Number($('#score')?.value);
+    async function enterScore(sb){
+      const chipSel = $('#chip');
+      const judgeSel = $('#judge');
+      const scoreEl = $('#score');
+      
+      const chip = chipSel?.value || '';
+      const judgeId = judgeSel?.value || '';
+      const scr = Number(scoreEl?.value);
+      
       if (!chip)  { alert('Please select a chip number.'); return; }
-      if (!judge) { alert('Please select a judge.'); return; }
-      if (!Number.isFinite(scr)) { alert('Enter a numeric score.'); return; }
+      if (!judgeId) { alert('Please select a judge.'); return; }
+      if (!Number.isFinite(scr) || scr < 0) { alert('Enter a valid numeric score (0 or greater).'); return; }
 
-      const arr = getList(K.sauce);
-      arr.unshift({ chip, judge, score: scr, ts: new Date().toISOString() });
-      setList(K.sauce, arr);
+      const { data, error } = await sb.from('sauce_scores').insert([{
+        judge_id: judgeId,
+        chip_number: chip,
+        score: scr
+      }]).select().single();
 
-      localStorage.setItem(K.selChip, chip);
-      localStorage.setItem(K.selJudge, judge);
+      if (error) {
+        console.error('Save error:', error);
+        alert('Failed to save: ' + error.message);
+        return;
+      }
 
-      if ($('#score')) $('#score').value = '';
-      const st = $('#status'); if (st) { st.textContent = 'Saved locally at ' + new Date().toLocaleTimeString(); setTimeout(()=>st.textContent='Saved scores appear on the Leaderboard → Sauce Tasting.', 3000); }
+      if (scoreEl) scoreEl.value = '';
+      const st = $('#status'); 
+      if (st) { 
+        st.textContent = 'Saved at ' + new Date().toLocaleTimeString(); 
+        setTimeout(()=>st.textContent='Saved scores appear on the Leaderboard → Sauce Tasting.', 3000); 
+      }
       alert('Sauce score saved for chip #' + chip);
     }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
-      refreshDropdowns();
-      const btn = $('#enterBtn'); if (btn) btn.addEventListener('click', enterScore);
-      const chipSel = $('#chip'); if (chipSel) chipSel.addEventListener('change', ()=>{ if(chipSel.value) localStorage.setItem(K.selChip, chipSel.value); });
-      const judgeSel = $('#judge'); if (judgeSel) judgeSel.addEventListener('change', ()=>{ if(judgeSel.value) localStorage.setItem(K.selJudge, judgeSel.value); });
+    waitForSupabase(function(sb){
+      document.addEventListener('DOMContentLoaded', ()=>{
+        refreshDropdowns(sb);
+        const btn = $('#enterBtn'); 
+        if (btn) btn.addEventListener('click', () => enterScore(sb));
+      });
     });
-    window.addEventListener('storage', (e)=>{ if (e && (e.key===K.sauceChips || e.key===K.judges)) refreshDropdowns(); });
-    document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) refreshDropdowns(); });
   })();
   </script>
 </body>

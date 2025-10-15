@@ -61,6 +61,9 @@
     }
     #wholehog-nav a{ display:inline-block; white-space:nowrap; width:auto; float:none!important; }
   </style>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
 </head>
 <body>
   <header class="header" style="height:2.25in; min-height:2.25in; position:relative; display:flex; align-items:center; justify-content:center;">
@@ -140,79 +143,7 @@
     </div>
   </div>
 
-  <!-- Your existing scripts / Supabase wiring -->
-  <script src="onsite.js"></script>
-  <script src="supabase-config.js"></script>
-  <script src="onsite-sync-teams.js"></script>
-
-  <!-- LOCAL-ONLY SYNC: populate teamSel/judgeSel from landing’s localStorage (non-destructive) -->
-  <script>
-  (function(){
-    // Keys must match landing.html
-    const K = {
-      teams: 'wh_Teams',
-      judges: 'wh_Judges',
-      selTeam: 'selectedTeamName',
-      selJudge: 'selectedJudgeName'
-    };
-
-    // Helpers
-    function getList(key){ try { return JSON.parse(localStorage.getItem(key)||'[]'); } catch { return []; } }
-    function getStr(key){ const v = localStorage.getItem(key); return (typeof v === 'string') ? v : ''; }
-    function uniqueNames(arr, prop){
-      if (!Array.isArray(arr)) return [];
-      const names = arr.map(o => (o && o[prop]) ? String(o[prop]) : '').filter(Boolean);
-      return Array.from(new Set(names));
-    }
-    function populateSelect(sel, items, selected, placeholder){
-      if (!sel) return;
-      const opts = ['<option value="">'+(placeholder||'Select…')+'</option>']
-        .concat(items.map(n => '<option value="'+n+'">'+n+'</option>'));
-      const prev = sel.value;
-      sel.innerHTML = opts.join('');
-      if (selected && items.includes(selected)) sel.value = selected;
-      else if (items.includes(prev)) sel.value = prev;
-    }
-
-    function refreshOnsiteDropdowns(){
-      const teamSel  = document.getElementById('teamSel');
-      const judgeSel = document.getElementById('judgeSel');
-
-      const teams  = uniqueNames(getList(K.teams),  'name');
-      const judges = uniqueNames(getList(K.judges), 'name');
-
-      const curTeam  = getStr(K.selTeam);
-      const curJudge = getStr(K.selJudge);
-
-      populateSelect(teamSel,  teams,  curTeam,  'Select team…');
-      populateSelect(judgeSel, judges, curJudge, 'Select judge…');
-    }
-
-    function wireSelectionPersistence(){
-      const teamSel  = document.getElementById('teamSel');
-      const judgeSel = document.getElementById('judgeSel');
-      if (teamSel){
-        teamSel.addEventListener('change', () => {
-          const v = teamSel.value || '';
-          if (v) localStorage.setItem(K.selTeam, v);
-        });
-      }
-      if (judgeSel){
-        judgeSel.addEventListener('change', () => {
-          const v = judgeSel.value || '';
-          if (v) localStorage.setItem(K.selJudge, v);
-        });
-      }
-    }
-
-    // Initial paint & keep in sync with landing
-    document.addEventListener('DOMContentLoaded', () => { refreshOnsiteDropdowns(); wireSelectionPersistence(); });
-    window.addEventListener('storage', (e) => {
-      if (!e || !e.key) return;
-      if ([K.teams, K.judges, K.selTeam, K.selJudge].includes(e.key)) refreshOnsiteDropdowns();
-    });
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshOnsiteDropdowns(); });
-  })();
-  </script>
+  <!-- Supabase-based onsite scoring -->
+  <script src="onsite-supabase.js"></script>
 </body>
 </html>
