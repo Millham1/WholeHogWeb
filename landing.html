@@ -325,7 +325,7 @@
 
       // If user typed an email, validate
       if (mail.length){
-        if (!isValidEmail(mail)){
+        if (!isValidEmail(mail)){ 
           if (err) err.style.display = 'block';
           ev.preventDefault();
           ev.stopImmediatePropagation();
@@ -341,12 +341,10 @@
 
       // clear email box after successful add (let existing handler proceed)
       setTimeout(function(){
-        try { if (email) email.value = ''; if (err) err.style.display = 'none'; } catch(_){}
+        try { if (email) email.value = ''; if (err) err.style.display = 'none'; } catch(_){ }
       }, 0);
     }, true); // capture: true → run before other handlers
   });
 })();
 </script>
 </body></html>
-
-
