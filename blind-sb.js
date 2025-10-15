@@ -1,4 +1,5 @@
 // Updated paths for Supabase REST API
+// test entry to clear sha mismatch
 
 export const sbGet = {
     judges: '/judges',
