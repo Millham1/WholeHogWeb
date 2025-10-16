@@ -2,4 +2,4 @@
 
 // Basic JavaScript Scaffold
 
-console.log('Hello, World!');
+console.log('WholeHogWeb loaded!');
