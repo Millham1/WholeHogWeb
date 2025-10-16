@@ -1,3 +1,0 @@
-.score-selected { background: yellow !important; color: black !important; }
-button[data-score].score-selected { outline: 2px solid #d4b000; }
-label.score-selected { background: yellow !important; color: black !important; border-radius: 4px; padding: 2px 4px; }
