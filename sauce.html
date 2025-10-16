@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whole Hog Web</title>
+    <style>
+        .scoring-row { margin-bottom: 12px; }
+        .save-status { margin-top: 10px; font-weight: bold; }
+        #wholehog-nav { margin-bottom: 16px; }
+        #wholehog-nav button {
+            margin-right: 8px;
+            padding: 6px 16px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sauce Taste Scoring</h1>
+    </header>
+    <nav id="wholehog-nav">
+      <button onclick="location.href='./onsite.html'">Go to On-Site</button>
+      <button onclick="location.href='./blind.html'">Go to Blind Taste</button>
+      <button onclick="location.href='./leaderboard.html'">Go to Leaderboard</button>
+      <button onclick="location.href='./sauce.html'">Go to Sauce Tasting</button>
+      <button onclick="location.href='./reports.html'">Go to Reports</button>
+    </nav>
+    <main>
+        <form id="sauceForm" autocomplete="off">
+            <div class="scoring-row">
+                <label for="judge">Judge:</label>
+                <select id="judge" name="judge" required>
+                    <option value="">Select Judge</option>
+                    <!-- Judges will be populated dynamically -->
+                </select>
+            </div>
+            <div class="scoring-row">
+                <label for="chipNumber">Chip Number:</label>
+                <select id="chipNumber" name="chipNumber" required>
+                    <option value="">Select Chip Number</option>
+                </select>
+            </div>
+            <div class="scoring-row">
+                <label for="sauceScore">Sauce Score:</label>
+                <select id="sauceScore" name="sauceScore" required>
+                    <option value="">Select</option>
+                    <!-- 1-20 -->
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19">19</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <div class="scoring-row">
+                <button type="submit">Save Score</button>
+            </div>
+        </form>
+        <div id="saveStatus" class="save-status"></div>
+    </main>
+    <script>
+        // Populate chip numbers 200 to 220
+        const chipNumberSelect = document.getElementById('chipNumber');
+        for (let i = 200; i <= 220; i++) {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = i;
+            chipNumberSelect.appendChild(opt);
+        }
+
+        // Fetch judge names from DB (replace with actual API)
+        async function fetchJudges() {
+            // Placeholder: replace with real fetch (e.g., /api/judges)
+            return ["Alice", "Bob", "Charlie"];
+        }
+        async function populateJudges() {
+            const judges = await fetchJudges();
+            const judgeSelect = document.getElementById('judge');
+            judges.forEach(judge => {
+                let opt = document.createElement('option');
+                opt.value = judge;
+                opt.textContent = judge;
+                judgeSelect.appendChild(opt);
+            });
+        }
+        populateJudges();
+
+        // Save logic (stubbed for demo, replace with real DB/API)
+        document.getElementById('sauceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const status = document.getElementById('saveStatus');
+            const judge = document.getElementById('judge').value;
+            const chip = document.getElementById('chipNumber').value;
+            const sauceScore = document.getElementById('sauceScore').value;
+            if (!judge || !chip || !sauceScore) {
+                status.textContent = "Please fill out all fields.";
+                status.style.color = "#b10020";
+                return;
+            }
+            // Placeholder: check for duplicate judge/chip in DB
+            const duplicate = false; // Replace with DB check
+            if (duplicate) {
+                status.textContent = "Duplicate entry for this judge and chip number.";
+                status.style.color = "#b10020";
+                return;
+            }
+            // Placeholder: save to DB
+            status.textContent = "Sauce score saved successfully!";
+            status.style.color = "#198754";
+            // Clear form
+            document.getElementById('sauceForm').reset();
+        });
+    </script>
+</body>
+</html>
