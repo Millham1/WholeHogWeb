@@ -3,197 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whole Hog Web</title>
+    <title>Event Page</title>
     <style>
-        .scoring-row { margin-bottom: 12px; }
-        .save-status { margin-top: 10px; font-weight: bold; }
-        .score-select:disabled { background: #eee; }
-        #wholehog-nav { margin-bottom: 16px; }
-        #wholehog-nav button {
-            margin-right: 8px;
-            padding: 6px 16px;
-            font-size: 1em;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: linear-gradient(to right, red, white, blue);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .event-text {
+            font-weight: bold;
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .navigation {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .nav-button {
+            background-color: #e53935;
+            color: black;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin: 0 10px;
             cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .nav-button:hover {
+            background-color: #d32f2f;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Blind Taste Scoring</h1>
+        <img src="left-pig.png" alt="Pig" style="float: left; width: 100px;">
+        <h1 class="event-text">Event Title Here</h1>
+        <img src="right-medallion.png" alt="Medallion" style="float: right; width: 100px;">
+        <div style="clear: both;"></div>
     </header>
-    <nav id="wholehog-nav">
-      <button onclick="location.href='./onsite.html'">Go to On-Site</button>
-      <button onclick="location.href='./blind.html'">Go to Blind Taste</button>
-      <button onclick="location.href='./leaderboard.html'">Go to Leaderboard</button>
-      <button onclick="location.href='./sauce.html'">Go to Sauce Tasting</button>
-      <button onclick="location.href='./reports.html'">Go to Reports</button>
-    </nav>
-    <main>
-        <form id="blindTasteForm" autocomplete="off">
-            <div class="scoring-row">
-                <label for="judge">Judge:</label>
-                <select id="judge" name="judge" required>
-                    <option value="">Select Judge</option>
-                    <!-- Judges will be populated dynamically -->
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="chipNumber">Chip Number:</label>
-                <select id="chipNumber" name="chipNumber" required>
-                    <option value="">Select Chip Number</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="appearanceScore">Appearance:</label>
-                <select id="appearanceScore" class="score-select" name="appearanceScore" required>
-                    <option value="">Select</option>
-                    <option value="2">2</option>
-                    <option value="4">4</option>
-                    <option value="6">6</option>
-                    <option value="8">8</option>
-                    <option value="10">10</option>
-                    <option value="12">12</option>
-                    <option value="14">14</option>
-                    <option value="16">16</option>
-                    <option value="18">18</option>
-                    <option value="20">20</option>
-                    <option value="22">22</option>
-                    <option value="24">24</option>
-                    <option value="26">26</option>
-                    <option value="28">28</option>
-                    <option value="30">30</option>
-                    <option value="32">32</option>
-                    <option value="34">34</option>
-                    <option value="36">36</option>
-                    <option value="38">38</option>
-                    <option value="40">40</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="tendernessScore">Tenderness:</label>
-                <select id="tendernessScore" class="score-select" name="tendernessScore" required>
-                    <option value="">Select</option>
-                    <option value="2">2</option>
-                    <option value="4">4</option>
-                    <option value="6">6</option>
-                    <option value="8">8</option>
-                    <option value="10">10</option>
-                    <option value="12">12</option>
-                    <option value="14">14</option>
-                    <option value="16">16</option>
-                    <option value="18">18</option>
-                    <option value="20">20</option>
-                    <option value="22">22</option>
-                    <option value="24">24</option>
-                    <option value="26">26</option>
-                    <option value="28">28</option>
-                    <option value="30">30</option>
-                    <option value="32">32</option>
-                    <option value="34">34</option>
-                    <option value="36">36</option>
-                    <option value="38">38</option>
-                    <option value="40">40</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="tasteScore">Taste:</label>
-                <select id="tasteScore" class="score-select" name="tasteScore" required>
-                    <option value="">Select</option>
-                    <option value="4">4</option>
-                    <option value="8">8</option>
-                    <option value="12">12</option>
-                    <option value="16">16</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                    <option value="28">28</option>
-                    <option value="32">32</option>
-                    <option value="36">36</option>
-                    <option value="40">40</option>
-                    <option value="44">44</option>
-                    <option value="48">48</option>
-                    <option value="52">52</option>
-                    <option value="56">56</option>
-                    <option value="60">60</option>
-                    <option value="64">64</option>
-                    <option value="68">68</option>
-                    <option value="72">72</option>
-                    <option value="76">76</option>
-                    <option value="80">80</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <button type="submit">Save Scores</button>
-            </div>
-        </form>
-        <div id="saveStatus" class="save-status"></div>
-    </main>
-    <script>
-        // Populate chip numbers
-        const chipNumberSelect = document.getElementById('chipNumber');
-        for (let i = 100; i <= 120; i++) {
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = i;
-            chipNumberSelect.appendChild(opt);
-        }
-
-        // Fetch judge names from DB (replace with actual API)
-        async function fetchJudges() {
-            // Placeholder: replace with real fetch (e.g., /api/judges)
-            return ["Alice", "Bob", "Charlie"];
-        }
-        async function populateJudges() {
-            const judges = await fetchJudges();
-            const judgeSelect = document.getElementById('judge');
-            judges.forEach(judge => {
-                let opt = document.createElement('option');
-                opt.value = judge;
-                opt.textContent = judge;
-                judgeSelect.appendChild(opt);
-            });
-        }
-        populateJudges();
-
-        // Only show selected value in dropdown after chosen
-        function handleScoreSelect(sel) {
-            for (let i = 0; i < sel.options.length; i++) {
-                sel.options[i].style.display =
-                  sel.selectedIndex === i || i === 0 ? "" : "none";
-            }
-        }
-        document.querySelectorAll('.score-select').forEach(function(sel) {
-            sel.addEventListener('change', function() { handleScoreSelect(sel); });
-        });
-
-        // Save logic (stubbed for demo, replace with real DB/API)
-        document.getElementById('blindTasteForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const status = document.getElementById('saveStatus');
-            const judge = document.getElementById('judge').value;
-            const chip = document.getElementById('chipNumber').value;
-            const appearance = document.getElementById('appearanceScore').value;
-            const tenderness = document.getElementById('tendernessScore').value;
-            const taste = document.getElementById('tasteScore').value;
-            if (!judge || !chip || !appearance || !tenderness || !taste) {
-                status.textContent = "Please fill out all fields.";
-                status.style.color = "#b10020";
-                return;
-            }
-            // Placeholder: check for duplicate judge/chip in DB
-            const duplicate = false; // Replace with DB check
-            if (duplicate) {
-                status.textContent = "Duplicate entry for this judge and chip number.";
-                status.style.color = "#b10020";
-                return;
-            }
-            // Placeholder: save to DB
-            status.textContent = "Blind taste scores saved successfully!";
-            status.style.color = "#198754";
-            document.getElementById('blindTasteForm').reset();
-            document.querySelectorAll('.score-select').forEach(function(sel) {
-                handleScoreSelect(sel);
-            });
-        });
-    </script>
+    <div class="navigation">
+        <button class="nav-button">Home</button>
+        <button class="nav-button">About</button>
+        <button class="nav-button">Contact</button>
+    </div>
 </body>
 </html>
