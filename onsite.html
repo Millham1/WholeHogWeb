@@ -1,255 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whole Hog Web</title>
-    <style>
-        .scoring-row { margin-bottom: 12px; }
-        .fail-flag { color: #b10020; font-weight: bold; display: none; margin-top: 8px; }
-        .score-select:disabled { background: #eee; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Onsite Scoring</title>
+  <style>
+    :root { --wh-header-h: 2.5in; }
+    body { margin:0; font-family:sans-serif; background:#f8f8f8; }
+    .header-outer { display:flex; justify-content:center; margin:24px 0 14px 0; }
+    header.rounded-header {
+      width:100%;
+      max-width:1200px;
+      height:var(--wh-header-h);
+      min-height:var(--wh-header-h);
+      border-radius:60px;
+      border:6px solid #000; /* BLACK block border */
+      background: linear-gradient(to right, #e53935 0%, #fff 50%, #1976d2 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:visible;
+    }
+    header.rounded-header h1 {
+      margin:0; font-size:2.5rem; flex:1; text-align:center; font-weight:900; color:#222; letter-spacing:.02em;
+      z-index:2;
+    }
+    header.rounded-header img.left-img {
+      position:absolute; left:28px; top:50%; transform:translateY(-50%);
+      height:calc(100% - 40px); max-width:120px; z-index:2; background:transparent; display:block;
+    }
+    header.rounded-header img.right-img {
+      position:absolute; right:28px; top:50%; transform:translateY(-50%);
+      height:calc(100% - 40px); max-width:120px; z-index:2; background:transparent; display:block;
+    }
+    #wholehog-nav { width:100%; margin:12px auto; display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; text-align:center; }
+    #wholehog-nav a { 
+      display:inline-block; 
+      white-space:nowrap; 
+      padding:8px 12px; 
+      border:2px solid #000; 
+      border-radius:10px; 
+      text-decoration:none; 
+      color:#000; 
+      background:#e53935; 
+      font-weight:bold;
+      transition: background 0.2s, color 0.2s, border 0.2s;
+    }
+    #wholehog-nav a:hover { 
+      background:#fff; 
+      color:#e53935; 
+      border-color:#e53935;
+    }
+    .scoring-row { margin-bottom: 12px; }
+    .fail-flag { color: #b10020; font-weight: bold; display: none; margin-top: 8px; }
+    .score-select:disabled { background: #eee; }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Onsite Scoring</h1>
+  <div class="header-outer">
+    <header class="rounded-header">
+      <img src="images/bbq-pig.png" class="left-img" alt="Pig logo" />
+      <h1>Onsite Scoring</h1>
+      <img src="images/legion-medallion.png" class="right-img" alt="Medallion" />
     </header>
-    <nav id="wholehog-nav">
-      <a href="./onsite.html">Go to On-Site</a>
-      <a href="./blind.html">Go to Blind Taste</a>
-      <a href="./leaderboard.html">Go to Leaderboard</a>
-      <a href="./sauce.html">Go to Sauce Tasting</a>
-      <a href="./reports.html">Go to Reports</a>
-    </nav>
-    <main>
-        <form id="scoringForm" autocomplete="off">
-            <div class="scoring-row">
-                <label for="suitable">Suitable for Consumption?</label>
-                <select id="suitable" name="suitable">
-                    <option value="">Select</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-                <div id="failFlag" class="fail-flag">Automatic Fail: Not suitable for consumption. No scores allowed.</div>
-            </div>
-            <div class="scoring-row">
-                <label for="appearanceScore">Appearance:</label>
-                <select id="appearanceScore" class="score-select" name="appearanceScore">
-                    <option value="">Select</option>
-                    <option value="2">2</option>
-                    <option value="4">4</option>
-                    <option value="6">6</option>
-                    <option value="8">8</option>
-                    <option value="10">10</option>
-                    <option value="12">12</option>
-                    <option value="14">14</option>
-                    <option value="16">16</option>
-                    <option value="18">18</option>
-                    <option value="20">20</option>
-                    <option value="22">22</option>
-                    <option value="24">24</option>
-                    <option value="26">26</option>
-                    <option value="28">28</option>
-                    <option value="30">30</option>
-                    <option value="32">32</option>
-                    <option value="34">34</option>
-                    <option value="36">36</option>
-                    <option value="38">38</option>
-                    <option value="40">40</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="colorScore">Color:</label>
-                <select id="colorScore" class="score-select" name="colorScore">
-                    <option value="">Select</option>
-                    <option value="2">2</option>
-                    <option value="4">4</option>
-                    <option value="6">6</option>
-                    <option value="8">8</option>
-                    <option value="10">10</option>
-                    <option value="12">12</option>
-                    <option value="14">14</option>
-                    <option value="16">16</option>
-                    <option value="18">18</option>
-                    <option value="20">20</option>
-                    <option value="22">22</option>
-                    <option value="24">24</option>
-                    <option value="26">26</option>
-                    <option value="28">28</option>
-                    <option value="30">30</option>
-                    <option value="32">32</option>
-                    <option value="34">34</option>
-                    <option value="36">36</option>
-                    <option value="38">38</option>
-                    <option value="40">40</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="skinScore">Skin:</label>
-                <select id="skinScore" class="score-select" name="skinScore">
-                    <option value="">Select</option>
-                    <option value="4">4</option>
-                    <option value="8">8</option>
-                    <option value="12">12</option>
-                    <option value="16">16</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                    <option value="28">28</option>
-                    <option value="32">32</option>
-                    <option value="36">36</option>
-                    <option value="40">40</option>
-                    <option value="44">44</option>
-                    <option value="48">48</option>
-                    <option value="52">52</option>
-                    <option value="56">56</option>
-                    <option value="60">60</option>
-                    <option value="64">64</option>
-                    <option value="68">68</option>
-                    <option value="72">72</option>
-                    <option value="76">76</option>
-                    <option value="80">80</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="moistureScore">Moisture:</label>
-                <select id="moistureScore" class="score-select" name="moistureScore">
-                    <option value="">Select</option>
-                    <option value="4">4</option>
-                    <option value="8">8</option>
-                    <option value="12">12</option>
-                    <option value="16">16</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                    <option value="28">28</option>
-                    <option value="32">32</option>
-                    <option value="36">36</option>
-                    <option value="40">40</option>
-                    <option value="44">44</option>
-                    <option value="48">48</option>
-                    <option value="52">52</option>
-                    <option value="56">56</option>
-                    <option value="60">60</option>
-                    <option value="64">64</option>
-                    <option value="68">68</option>
-                    <option value="72">72</option>
-                    <option value="76">76</option>
-                    <option value="80">80</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="meatScore">Meat:</label>
-                <select id="meatScore" class="score-select" name="meatScore">
-                    <option value="">Select</option>
-                    <option value="4">4</option>
-                    <option value="8">8</option>
-                    <option value="12">12</option>
-                    <option value="16">16</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                    <option value="28">28</option>
-                    <option value="32">32</option>
-                    <option value="36">36</option>
-                    <option value="40">40</option>
-                    <option value="44">44</option>
-                    <option value="48">48</option>
-                    <option value="52">52</option>
-                    <option value="56">56</option>
-                    <option value="60">60</option>
-                    <option value="64">64</option>
-                    <option value="68">68</option>
-                    <option value="72">72</option>
-                    <option value="76">76</option>
-                    <option value="80">80</option>
-                </select>
-            </div>
-            <div class="scoring-row">
-                <label for="sauceScore">Sauce:</label>
-                <select id="sauceScore" class="score-select" name="sauceScore">
-                    <option value="">Select</option>
-                    <option value="4">4</option>
-                    <option value="8">8</option>
-                    <option value="12">12</option>
-                    <option value="16">16</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                    <option value="28">28</option>
-                    <option value="32">32</option>
-                    <option value="36">36</option>
-                    <option value="40">40</option>
-                    <option value="44">44</option>
-                    <option value="48">48</option>
-                    <option value="52">52</option>
-                    <option value="56">56</option>
-                    <option value="60">60</option>
-                    <option value="64">64</option>
-                    <option value="68">68</option>
-                    <option value="72">72</option>
-                    <option value="76">76</option>
-                    <option value="80">80</option>
-                </select>
-            </div>
-            <!-- Completeness categories assumed to already be present and correct -->
-            <div class="scoring-row">
-                <button type="submit">Save Scores</button>
-            </div>
-        </form>
-        <div id="saveStatus"></div>
-    </main>
-    <script>
-        // Helper to show only selected dropdown value after selection
-        function handleScoreSelect(sel) {
-            for (let i = 0; i < sel.options.length; i++) {
-                sel.options[i].style.display =
-                  sel.selectedIndex === i || i === 0 ? "" : "none";
-            }
-        }
-        document.querySelectorAll('.score-select').forEach(function(sel) {
-            sel.addEventListener('change', function() { handleScoreSelect(sel); });
-        });
-
-        // Suitable for Consumption logic
-        document.getElementById('suitable').addEventListener('change', function() {
-            const val = this.value;
-            const failFlag = document.getElementById('failFlag');
-            const selects = document.querySelectorAll('.score-select');
-            if (val === "No") {
-                failFlag.style.display = "";
-                selects.forEach(s => { s.disabled = true; s.value = ""; handleScoreSelect(s); });
-            } else {
-                failFlag.style.display = "none";
-                selects.forEach(s => { s.disabled = false; });
-            }
-        });
-
-        // Save logic (stubbed for demo, replace with real storage)
-        document.getElementById('scoringForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const status = document.getElementById('saveStatus');
-            const suitable = document.getElementById('suitable').value;
-            if (suitable === "No") {
-                status.textContent = "Entry not saved: Not suitable for consumption.";
-                status.style.color = "#b10020";
-                return;
-            }
-            let allValid = true;
-            document.querySelectorAll('.score-select').forEach(function(sel) {
-                if (!sel.value) allValid = false;
-            });
-            if (!allValid) {
-                status.textContent = "Please fill out all scores.";
-                status.style.color = "#b10020";
-                return;
-            }
-            // Replace this with actual save logic (API, DB, etc)
-            status.textContent = "Scores saved successfully!";
-            status.style.color = "#198754";
-            // Clear form
-            document.getElementById('scoringForm').reset();
-            document.querySelectorAll('.score-select').forEach(function(sel) {
-                handleScoreSelect(sel);
-            });
-            document.getElementById('failFlag').style.display = "none";
-        });
-    </script>
+  </div>
+  <nav id="wholehog-nav">
+    <a href="./onsite.html">Go to On-Site</a>
+    <a href="./blind.html">Go to Blind Taste</a>
+    <a href="./leaderboard.html">Go to Leaderboard</a>
+    <a href="./sauce.html">Go to Sauce Tasting</a>
+    <a href="./reports.html">Go to Reports</a>
+  </nav>
+  <main>
+      <!-- scoring form and page content here -->
+  </main>
 </body>
 </html>
