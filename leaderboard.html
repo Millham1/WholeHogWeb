@@ -1,150 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaderboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        header {
-            background: linear-gradient(to right, red, white, blue);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-        }
-        .event-text {
-            font-weight: bold;
-            font-size: 24px;
-            margin: 20px 0;
-        }
-        header img.left {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 80px;
-        }
-        header img.right {
-            position: absolute;
-            right: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 80px;
-        }
-        nav.navigation {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0 0 0;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .nav-button {
-            background-color: #e53935;
-            color: black;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s;
-        }
-        .nav-button:hover {
-            background-color: #d32f2f;
-        }
-        .leaderboard-table { border-collapse: collapse; width: 100%; margin: 36px 0; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background: #efefef; }
-        .card-group { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 36px;}
-        .leader-card {
-            border: 2px solid #d3a600;
-            background: #fff8e1;
-            padding: 18px;
-            border-radius: 10px;
-            min-width: 220px;
-            flex: 1;
-        }
-        .leader-card h3 { margin: 0 0 8px 0; }
-        .badge {
-            display: inline-block;
-            padding: 2px 10px;
-            margin-left: 8px;
-            font-size: 0.9em;
-            background: #1976d2;
-            color: #fff;
-            border-radius: 8px;
-            vertical-align: middle;
-        }
-        h2 { margin-top: 32px; }
-        @media print {
-            nav.navigation, .controls { display: none; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Leaderboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f8fa;
+      margin: 0;
+      padding: 0;
+    }
+    .title {
+      text-align: center;
+      font-size: 2.3em;
+      margin: 2em 0 1em 0;
+      font-weight: 700;
+      color: #1a355e;
+      letter-spacing: .5px;
+    }
+    .nav-buttons {
+      display: flex;
+      gap: 1em;
+      justify-content: center;
+      margin-bottom: 2em;
+    }
+    .nav-btn {
+      background: #e53935;
+      color: #111;
+      font-weight: 600;
+      border: 2px solid #111;
+      border-radius: 7px;
+      padding: .7em 2em;
+      font-size: 1em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 5px rgba(229,57,53,0.09);
+    }
+    .nav-btn:hover {
+      background: #b71c1c;
+    }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      max-width: 950px;
+      margin: 0 auto 2em auto;
+      padding: 2em 2.5em 2.5em 2.5em;
+    }
+    /* Division Leaders Card */
+    .division-leader-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 8px rgba(44,62,80,0.10);
+      padding: 2em 2.5em;
+      max-width: 950px;
+      margin: 0 auto 2em auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .division-leader-card h2 {
+      color: #284078;
+      margin-bottom: 1em;
+      font-size: 1.3em;
+      font-weight: 700;
+      text-align: center;
+    }
+    .division-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2em;
+      width: 100%;
+      justify-items: center;
+      align-items: stretch;
+    }
+    .division-winner {
+      min-width: 200px;
+      background: #f7f8fa;
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgba(44,62,80,0.07);
+      padding: 1.2em 1.4em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .division-winner h3 {
+      color: #284078;
+      margin-bottom: .3em;
+      font-size: 1.09em;
+      font-weight: 600;
+      text-align: center;
+    }
+    .division-winner .winner {
+      font-size: 1.08em;
+      font-weight: 550;
+      color: #1a355e;
+      margin-bottom: .2em;
+      text-align: center;
+    }
+    .division-winner .score {
+      font-size: 1.05em;
+      color: #444;
+      font-weight: 500;
+      text-align: center;
+    }
+    /* Tiebreaker Badge */
+    .tiebreak-badge {
+      display: inline-block;
+      background: #2d6bf7;
+      color: #fff;
+      font-size: .95em;
+      font-weight: 700;
+      border-radius: 9px;
+      padding: .2em .8em;
+      margin-top: .4em;
+      margin-bottom: .2em;
+      letter-spacing: .5px;
+      box-shadow: 0 1px 4px rgba(45,107,247,0.10);
+    }
+    /* Onsite Leaderboard */
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+      font-size: 1em;
+    }
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 0.7em 0.5em;
+      border-bottom: 1px solid #e3e8f0;
+      text-align: left;
+    }
+    .leaderboard-table th {
+      background: #f0f3fa;
+      color: #284078;
+      font-weight: 600;
+    }
+    .leaderboard-table tr:nth-child(even) {
+      background: #f6f7fa;
+    }
+    @media (max-width: 900px) {
+      .division-grid {
+        grid-template-columns: 1fr;
+        gap: 1em;
+      }
+      .card, .division-leader-card {
+        padding: 1em;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <img src="left-pig.png" alt="Pig" class="left">
-        <span class="event-text">Leaderboard</span>
-        <img src="right-medallion.png" alt="Medallion" class="right">
-    </header>
-    <nav class="navigation">
-        <button class="nav-button" onclick="location.href='./onsite.html'">Go to On-Site</button>
-        <button class="nav-button" onclick="location.href='./blind.html'">Go to Blind Taste</button>
-        <button class="nav-button" onclick="location.href='./leaderboard.html'">Go to Leaderboard</button>
-        <button class="nav-button" onclick="location.href='./sauce.html'">Go to Sauce Tasting</button>
-        <button class="nav-button" onclick="location.href='./reports.html'">Go to Reports</button>
-    </nav>
-    <main>
-        <div class="controls">
-            <button class="nav-button" onclick="refreshLeaderboard()">Refresh</button>
-            <button class="nav-button" onclick="window.print()">Print</button>
-        </div>
-        <div class="card-group" id="divisionCardGroup">
-            <!-- Top Legion, Top Sons, People's Choice Winner -->
-        </div>
-        <section>
-            <h2>Onsite Leaderboard</h2>
-            <table class="leaderboard-table" id="onsiteTable">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Team</th>
-                        <th>Total Score</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-        <section>
-            <h2>Blind Taste Leaderboard</h2>
-            <table class="leaderboard-table" id="blindTable">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Chip Number</th>
-                        <th>Total Score</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-        <section>
-            <h2>Sauce Taste Leaderboard</h2>
-            <table class="leaderboard-table" id="sauceTable">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Chip Number</th>
-                        <th>Total Score</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-    </main>
-    <script>
-        // JS logic (same as before, omitted for brevity)
-    </script>
+  <div class="title">Leaderboard</div>
+  <div class="nav-buttons">
+    <a href="index.html" class="nav-btn">Home</a>
+    <a href="onsite-scoresheet.html" class="nav-btn">Onsite</a>
+    <a href="blind-taste.html" class="nav-btn">Blind Taste</a>
+    <a href="sauce.html" class="nav-btn">Sauce</a>
+    <a href="peoples-choice.html" class="nav-btn">People's Choice</a>
+  </div>
+  <!-- Division Leaders & People's Choice Winner in One Card with Grid -->
+  <div class="division-leader-card">
+    <h2>Division Leaders</h2>
+    <div class="division-grid">
+      <div class="division-winner" id="legion-winner">
+        <h3>Top Legion Team</h3>
+        <div class="winner" id="legion-team-name">Legion Team Name</div>
+        <div class="score" id="legion-team-score">Score</div>
+      </div>
+      <div class="division-winner" id="sons-winner">
+        <h3>Top Sons Team</h3>
+        <div class="winner" id="sons-team-name">Sons Team Name</div>
+        <div class="score" id="sons-team-score">Score</div>
+      </div>
+      <div class="division-winner" id="peoples-choice-winner">
+        <h3>People's Choice Winner</h3>
+        <div class="winner" id="peoples-choice-team">Team Name</div>
+        <div class="score" id="peoples-choice-score">Score</div>
+      </div>
+    </div>
+  </div>
+  <!-- Onsite Leaderboard -->
+  <div class="card leaderboard-card">
+    <h2>Onsite Leaderboard</h2>
+    <table class="leaderboard-table" id="onsite-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Team</th>
+          <th>Total Score</th>
+          <th>Tiebreaker</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Example row with tiebreaker badge (to be filled dynamically from DB) -->
+        <!--
+        <tr>
+          <td>1</td>
+          <td>Team A <span class="tiebreak-badge">Meat &amp; Sauce</span></td>
+          <td>410</td>
+          <td><span class="tiebreak-badge">Meat &amp; Sauce</span></td>
+        </tr>
+        -->
+      </tbody>
+    </table>
+  </div>
+  <!-- Blind Taste Leaderboard -->
+  <div class="card leaderboard-card">
+    <h2>Blind Taste Leaderboard</h2>
+    <table class="leaderboard-table" id="blind-taste-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Chip Number</th>
+          <th>Total Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Filled dynamically from DB -->
+      </tbody>
+    </table>
+  </div>
+  <!-- Sauce Leaderboard -->
+  <div class="card leaderboard-card">
+    <h2>Sauce Leaderboard</h2>
+    <table class="leaderboard-table" id="sauce-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Chip Number</th>
+          <th>Total Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Filled dynamically from DB -->
+      </tbody>
+    </table>
+  </div>
 </body>
 </html>
