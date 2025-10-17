@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Onsite Scoresheet</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f8fa;
+      margin: 0;
+      padding: 0;
+    }
+    .title {
+      text-align: center;
+      font-size: 2.3em;
+      margin: 2em 0 1em 0;
+      font-weight: 700;
+      color: #1a355e;
+      letter-spacing: .5px;
+    }
+    .nav-buttons {
+      display: flex;
+      gap: 1em;
+      justify-content: center;
+      margin-bottom: 2em;
+    }
+    .nav-btn {
+      background: #e53935;
+      color: #111;
+      font-weight: 600;
+      border: 2px solid #111;
+      border-radius: 7px;
+      padding: .7em 2em;
+      font-size: 1em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 5px rgba(229,57,53,0.09);
+    }
+    .nav-btn:hover {
+      background: #b71c1c;
+    }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      max-width: 950px;
+      margin: 0 auto 3em auto;
+      padding: 2em 2.5em 2.5em 2.5em;
+    }
+    .form-header {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5em;
+      margin-bottom: 2em;
+    }
+    .form-header label {
+      font-weight: 500;
+      margin-bottom: .4em;
+      display: block;
+      color: #284078;
+    }
+    .form-header select,
+    .form-header input[type="radio"] {
+      margin-top: .5em;
+      font-size: 1em;
+      padding: .5em;
+      border-radius: 6px;
+      border: 1px solid #c5d0e6;
+      background: #fafbfc;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .form-header .radio-group {
+      display: flex;
+      gap: 1em;
+      align-items: center;
+      margin-top: .5em;
+    }
+    .scoresheet-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.5em;
+      margin-bottom: 2em;
+    }
+    .scoresheet-grid > div {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-end;
+    }
+    .scoresheet-grid label {
+      font-weight: 500;
+      margin-bottom: .3em;
+      color: #284078;
+    }
+    .scoresheet-grid select {
+      font-size: 1em;
+      padding: .45em;
+      border-radius: 6px;
+      border: 1px solid #c5d0e6;
+      background: #fafbfc;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .completeness-card {
+      background: #f5f7fa;
+      border: 1.5px solid #c5d0e6;
+      border-radius: 12px;
+      padding: 1.5em 1.2em 1.2em 1.2em;
+      margin: 1.5em 0 1em 0;
+      box-shadow: 0 1px 6px rgba(44,62,80,0.07);
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .completeness-title {
+      font-weight: 600;
+      color: #284078;
+      font-size: 1.18em;
+      margin-bottom: 0.5em;
+      text-align: center;
+    }
+    .completeness-note {
+      font-size: 0.98em;
+      color: #555;
+      margin-bottom: 0.7em;
+      text-align: center;
+    }
+    .completeness-boxes {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+      margin-top: .5em;
+    }
+    .completeness-boxes label {
+      font-weight: 400;
+      color: #33476b;
+      margin-left: .3em;
+      display: inline;
+    }
+    button[type="submit"] {
+      background: #2d6bf7;
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      padding: 0.85em 2em;
+      border-radius: 7px;
+      font-size: 1.15em;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(45,107,247,0.08);
+      transition: background 0.2s;
+      margin-top: 1.2em;
+      margin-bottom: .5em;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    button[type="submit"]:hover {
+      background: #1746b2;
+    }
+    #error-message {
+      color: #c00;
+      margin-top: 1em;
+      font-size: 1em;
+      min-height: 1.2em;
+      text-align: center;
+    }
+    #fail-flag {
+      text-align: center;
+      margin-bottom: 1.2em;
+    }
+    .fail-flag-text {
+      color: #e53935;
+      font-weight: bold;
+      font-size: 1.08em;
+      margin-right: 1em;
+    }
+    .reinstate-btn {
+      background: #fff;
+      color: #111;
+      font-weight: 600;
+      border: 2px solid #111;
+      border-radius: 7px;
+      padding: .2em 1.2em;
+      font-size: 1em;
+      cursor: pointer;
+      margin-left: .5em;
+      transition: background 0.2s;
+    }
+    .reinstate-btn:hover {
+      background: #f4e7e7;
+    }
+    @media (max-width: 900px) {
+      .card {
+        padding: 1em;
+      }
+      .scoresheet-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .form-header {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+    @media (max-width: 600px) {
+      .form-header, .scoresheet-grid {
+        grid-template-columns: 1fr;
+      }
+      .container, .card {
+        padding: .5em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">Onsite Scoresheet</div>
+  <div class="nav-buttons">
+    <a href="index.html" class="nav-btn">Home</a>
+    <a href="blind-taste.html" class="nav-btn">Blind Taste</a>
+    <a href="sauce.html" class="nav-btn">Sauce</a>
+    <a href="peoples-choice.html" class="nav-btn">People's Choice</a>
+    <!-- No button for Onsite on this page -->
+  </div>
+  <div class="card">
+    <form id="scoresheet-form">
+      <!-- Header Section -->
+      <div class="form-header">
+        <div>
+          <label for="judge">Judge</label>
+          <select id="judge" name="judge">
+            <option value="">Select Judge</option>
+            <!-- Judges here -->
+          </select>
+        </div>
+        <div>
+          <label for="team">Team</label>
+          <select id="team" name="team">
+            <option value="">Select Team</option>
+            <!-- Teams here -->
+          </select>
+        </div>
+        <div>
+          <label>Suitable for Consumption?</label>
+          <div class="radio-group">
+            <input type="radio" id="suitable-yes" name="suitable" value="Yes">
+            <label for="suitable-yes">Yes</label>
+            <input type="radio" id="suitable-no" name="suitable" value="No">
+            <label for="suitable-no">No</label>
+          </div>
+        </div>
+      </div>
+      <!-- Fail Flag Message & Reinstate Button (hidden by default) -->
+      <div id="fail-flag" style="display:none;">
+        <span class="fail-flag-text">Automatic fail. No other scores can be entered.</span>
+        <button type="button" class="reinstate-btn" id="reinstate-btn">Reinstate</button>
+      </div>
+      <!-- Grid Section: 5 columns for dropdowns -->
+      <div class="scoresheet-grid">
+        <div>
+          <label for="appearance">Appearance</label>
+          <select id="appearance" name="appearance">
+            <option value="">Select</option>
+            <option value="2">2</option><option value="4">4</option>
+            <option value="6">6</option><option value="8">8</option>
+            <option value="10">10</option><option value="12">12</option>
+            <option value="14">14</option><option value="16">16</option>
+            <option value="18">18</option><option value="20">20</option>
+            <option value="22">22</option><option value="24">24</option>
+            <option value="26">26</option><option value="28">28</option>
+            <option value="30">30</option><option value="32">32</option>
+            <option value="34">34</option><option value="36">36</option>
+            <option value="38">38</option><option value="40">40</option>
+          </select>
+        </div>
+        <div>
+          <label for="color">Color</label>
+          <select id="color" name="color">
+            <option value="">Select</option>
+            <option value="2">2</option><option value="4">4</option>
+            <option value="6">6</option><option value="8">8</option>
+            <option value="10">10</option><option value="12">12</option>
+            <option value="14">14</option><option value="16">16</option>
+            <option value="18">18</option><option value="20">20</option>
+            <option value="22">22</option><option value="24">24</option>
+            <option value="26">26</option><option value="28">28</option>
+            <option value="30">30</option><option value="32">32</option>
+            <option value="34">34</option><option value="36">36</option>
+            <option value="38">38</option><option value="40">40</option>
+          </select>
+        </div>
+        <div>
+          <label for="skin">Skin</label>
+          <select id="skin" name="skin">
+            <option value="">Select</option>
+            <option value="4">4</option><option value="8">8</option>
+            <option value="12">12</option><option value="16">16</option>
+            <option value="20">20</option><option value="24">24</option>
+            <option value="28">28</option><option value="32">32</option>
+            <option value="36">36</option><option value="40">40</option>
+            <option value="44">44</option><option value="48">48</option>
+            <option value="52">52</option><option value="56">56</option>
+            <option value="60">60</option><option value="64">64</option>
+            <option value="68">68</option><option value="70">70</option>
+            <option value="72">72</option><option value="74">74</option>
+            <option value="76">76</option><option value="78">78</option>
+            <option value="80">80</option>
+          </select>
+        </div>
+        <div>
+          <label for="moisture">Moisture</label>
+          <select id="moisture" name="moisture">
+            <option value="">Select</option>
+            <option value="4">4</option><option value="8">8</option>
+            <option value="12">12</option><option value="16">16</option>
+            <option value="20">20</option><option value="24">24</option>
+            <option value="28">28</option><option value="32">32</option>
+            <option value="36">36</option><option value="40">40</option>
+            <option value="44">44</option><option value="48">48</option>
+            <option value="52">52</option><option value="56">56</option>
+            <option value="60">60</option><option value="64">64</option>
+            <option value="68">68</option><option value="70">70</option>
+            <option value="72">72</option><option value="74">74</option>
+            <option value="76">76</option><option value="78">78</option>
+            <option value="80">80</option>
+          </select>
+        </div>
+        <div>
+          <label for="meatSauce">Meat &amp; Sauce</label>
+          <select id="meatSauce" name="meatSauce">
+            <option value="">Select</option>
+            <option value="4">4</option><option value="8">8</option>
+            <option value="12">12</option><option value="16">16</option>
+            <option value="20">20</option><option value="24">24</option>
+            <option value="28">28</option><option value="32">32</option>
+            <option value="36">36</option><option value="40">40</option>
+            <option value="44">44</option><option value="48">48</option>
+            <option value="52">52</option><option value="56">56</option>
+            <option value="60">60</option><option value="64">64</option>
+            <option value="68">68</option><option value="70">70</option>
+            <option value="72">72</option><option value="74">74</option>
+            <option value="76">76</option><option value="78">78</option>
+            <option value="80">80</option>
+          </select>
+        </div>
+      </div>
+      <!-- Completeness Card -->
+      <div class="completeness-card">
+        <div class="completeness-title">Completeness</div>
+        <div class="completeness-note">Each item below is worth <strong>8 points</strong></div>
+        <div class="completeness-boxes">
+          <div>
+            <input type="checkbox" id="cleanliness" name="completeness" value="cleanliness">
+            <label for="cleanliness">Cleanliness</label>
+          </div>
+          <div>
+            <input type="checkbox" id="knives" name="completeness" value="knives">
+            <label for="knives">4 sharp knives</label>
+          </div>
+          <div>
+            <input type="checkbox" id="bowls" name="completeness" value="bowls">
+            <label for="bowls">4 sauce bowls/cups</label>
+          </div>
+          <div>
+            <input type="checkbox" id="drinks" name="completeness" value="drinks">
+            <label for="drinks">4 drinks & towels</label>
+          </div>
+          <div>
+            <input type="checkbox" id="thermometers" name="completeness" value="thermometers">
+            <label for="thermometers">Two functioning meat thermometers</label>
+          </div>
+        </div>
+      </div>
+      <button type="submit">Submit</button>
+      <div id="error-message"></div>
+    </form>
+  </div>
+  <script>
+    // Helper functions
+    function disableScoreFields(disabled) {
+      ['appearance', 'color', 'skin', 'moisture', 'meatSauce'].forEach(function(id) {
+        document.getElementById(id).disabled = disabled;
+      });
+      let checkboxes = document.querySelectorAll('.completeness-boxes input[type="checkbox"]');
+      checkboxes.forEach(cb => cb.disabled = disabled);
+    }
+    function clearForm() {
+      document.getElementById('judge').value = '';
+      document.getElementById('team').value = '';
+      document.getElementById('suitable-yes').checked = false;
+      document.getElementById('suitable-no').checked = false;
+      ['appearance', 'color', 'skin', 'moisture', 'meatSauce'].forEach(function(id) {
+        document.getElementById(id).value = '';
+        document.getElementById(id).disabled = false;
+      });
+      let checkboxes = document.querySelectorAll('.completeness-boxes input[type="checkbox"]');
+      checkboxes.forEach(cb => { cb.checked = false; cb.disabled = false; });
+      document.getElementById('fail-flag').style.display = 'none';
+      document.getElementById('error-message').textContent = '';
+    }
+    function showError(msg) {
+      document.getElementById('error-message').textContent = msg;
+    }
+
+    // Suitable for Consumption logic
+    document.getElementById('suitable-no').addEventListener('change', function() {
+      disableScoreFields(true);
+      document.getElementById('fail-flag').style.display = 'block';
+    });
+    document.getElementById('suitable-yes').addEventListener('change', function() {
+      disableScoreFields(false);
+      document.getElementById('fail-flag').style.display = 'none';
+    });
+    document.getElementById('reinstate-btn').addEventListener('click', function() {
+      document.getElementById('suitable-yes').checked = false;
+      document.getElementById('suitable-no').checked = false;
+      disableScoreFields(false);
+      document.getElementById('fail-flag').style.display = 'none';
+    });
+
+    // Submit logic (simulate save)
+    document.getElementById('scoresheet-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Data collection (simulate)
+      let judge = document.getElementById('judge').value;
+      let team = document.getElementById('team').value;
+      let suitable = document.getElementById('suitable-yes').checked ? 'Yes' :
+                     document.getElementById('suitable-no').checked ? 'No' : '';
+      // Example save simulation (replace with real API)
+      setTimeout(function() {
+        if (!judge || !team || !suitable) {
+          showError('Please fill out all required fields.');
+          return;
+        }
+        // If suitable is No, save only judge, team, suitable, fail:true
+        // If suitable is Yes, save all scores
+        clearForm();
+        showError('Saved!');
+      }, 500);
+    });
+  </script>
+</body>
+</html>
